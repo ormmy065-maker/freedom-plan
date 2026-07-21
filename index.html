@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -24,6 +25,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 .topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px}
 .content{padding:24px;flex:1}
+.page{display:none}
+.page.active{display:block}
 .logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
 .logo-mark{display:flex;align-items:center;gap:10px}
 .logo-icon{width:30px;height:30px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
@@ -32,7 +35,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .logo-sub{font-size:10px;color:var(--text3);margin-top:1px}
 .nav{padding:12px 10px;flex:1}
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left}
-.nav-item:hover{background:var(--green-light);color:var(--green)}
+.nav-item:hover:not(.disabled){background:var(--green-light);color:var(--green)}
 .nav-item.active{background:var(--green-light);color:var(--green);font-weight:500}
 .nav-item.disabled{opacity:.45;cursor:default}
 .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
@@ -47,8 +50,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .topbar-sub{font-size:12px;color:var(--text3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .topbar-tag{background:var(--green-light);color:var(--green);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}
+.currency-toggle{display:flex;border:1px solid var(--border2);border-radius:20px;overflow:hidden}
+.currency-toggle button{border:none;background:transparent;padding:5px 14px;font-size:12px;cursor:pointer;color:var(--text2);font-family:var(--font)}
+.currency-toggle button.active{background:var(--green);color:#fff}
 .section-title{font-size:18px;font-weight:600;margin-bottom:4px}
 .section-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
 .kpi-label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
@@ -60,6 +67,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .tag.active{background:var(--green);color:#fff;border-color:var(--green)}
 .tag:hover:not(.active){border-color:var(--green);color:var(--green)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:0;overflow:hidden}
+.card-sm{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.card-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.card-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+.chart-wrap{position:relative;width:100%;height:260px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .tbl{width:100%;border-collapse:collapse}
 .tbl th{text-align:left;padding:9px 12px;font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
 .tbl td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
@@ -97,8 +111,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
   </div>
   <nav class="nav">
     <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Thesis Monitor<span class="nav-badge">Phase 6</span></button>
-    <button class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio Tracker</button>
-    <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard<span class="nav-badge">Phase 3</span></button>
+    <button class="nav-item active" onclick="navigate('tracker')" id="nav-tracker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio Tracker</button>
+    <button class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard</button>
     <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Decision Engine<span class="nav-badge">Phase 4</span></button>
     <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tools Lab<span class="nav-badge">Phase 5</span></button>
   </nav>
@@ -109,14 +123,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
 <div class="main">
   <header class="topbar">
-    <div><div class="topbar-title">Portfolio Tracker</div><div class="topbar-sub">ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log</div></div>
-    <div class="topbar-right"><span class="topbar-tag" id="topbarUpdated">—</span></div>
+    <div><div class="topbar-title" id="topTitle">Portfolio Tracker</div><div class="topbar-sub" id="topSub">ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log</div></div>
+    <div class="topbar-right">
+      <div class="currency-toggle">
+        <button id="curUSD" class="active" onclick="setCurrency('USD')">USD</button>
+        <button id="curTHB" onclick="setCurrency('THB')">THB</button>
+      </div>
+      <span class="topbar-tag" id="topbarUpdated">—</span>
+    </div>
   </header>
 
   <div class="content">
-    <div class="section-title">Portfolio Tracker</div>
-    <div class="section-sub">Holdings ทั้งหมด คำนวณ avg cost / market value / P&L แบบ real-time จาก Transactions</div>
-
     <div id="setupBox" class="setup-box" style="display:none">
       <div style="font-size:14px;font-weight:500;margin-bottom:6px">ยังไม่ได้ตั้งค่า Apps Script URL</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:10px">วาง URL ที่ลงท้ายด้วย /exec จาก Google Apps Script deployment</div>
@@ -132,16 +149,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       <div style="margin-top:14px;color:var(--text3);font-size:13px">กำลังโหลดข้อมูล...</div>
     </div>
 
-    <div id="mainContent" style="display:none">
+    <!-- ===== PAGE: TRACKER ===== -->
+    <div class="page active" id="page-tracker">
+      <div class="section-title">Portfolio Tracker</div>
+      <div class="section-sub">Holdings ทั้งหมด คำนวณ avg cost / market value / P&L แบบ real-time จาก Transactions</div>
       <div class="grid-4">
         <div class="kpi"><div class="kpi-label">Total Value</div><div class="kpi-value" id="kTotal">—</div></div>
         <div class="kpi"><div class="kpi-label">Total Cost</div><div class="kpi-value" id="kCost">—</div></div>
         <div class="kpi"><div class="kpi-label">Unrealized P&L</div><div class="kpi-value" id="kPnl">—</div><div class="kpi-change" id="kPnlPct">—</div></div>
         <div class="kpi"><div class="kpi-label">Positions</div><div class="kpi-value" id="kCount">—</div><div class="kpi-change neutral" id="kPorts">—</div></div>
       </div>
-
       <div class="tag-row" id="filterTags"></div>
-
       <div class="card">
         <table class="tbl">
           <thead><tr>
@@ -152,6 +170,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </table>
       </div>
     </div>
+
+    <!-- ===== PAGE: DASHBOARD ===== -->
+    <div class="page" id="page-dashboard">
+      <div class="section-title">Portfolio Dashboard</div>
+      <div class="section-sub">สัดส่วนพอร์ตแยกตาม Portfolio / Sector / Asset Type — คำนวณจากข้อมูลจริง</div>
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="kpi"><div class="kpi-label">Total Portfolio Value</div><div class="kpi-value" id="dTotal">—</div></div>
+        <div class="kpi"><div class="kpi-label">USD/THB Rate</div><div class="kpi-value" id="dFx">—</div></div>
+        <div class="kpi"><div class="kpi-label">Top Portfolio</div><div class="kpi-value" id="dTopPort">—</div></div>
+        <div class="kpi"><div class="kpi-label">Top Sector</div><div class="kpi-value" id="dTopSector">—</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card-sm">
+          <div class="card-title">Portfolio Structure</div>
+          <div class="card-sub">สัดส่วนตาม Infinity / Nova / Spark / Victory / ฯลฯ</div>
+          <div class="chart-wrap"><canvas id="c-portfolio"></canvas></div>
+          <div class="chart-legend" id="leg-portfolio"></div>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Asset Type</div>
+          <div class="card-sub">Stock / Gold / Crypto / Fund / Option</div>
+          <div class="chart-wrap"><canvas id="c-assettype"></canvas></div>
+          <div class="chart-legend" id="leg-assettype"></div>
+        </div>
+      </div>
+      <div class="card-sm" style="margin-top:14px">
+        <div class="card-title">Sector Exposure</div>
+        <div class="card-sub">ความเข้มข้นตาม sector ทั้งพอร์ต</div>
+        <div class="chart-wrap" id="sectorWrap" style="height:320px"><canvas id="c-sector"></canvas></div>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -159,14 +208,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 <script>
 const STORAGE_KEY = 'ormmy_apps_script_url';
 let RAW_DATA = null;
-let CACHED_DATA = null;
-let CACHED_TIME = null;
 let currentFilter = 'all';
+let currentCurrency = 'USD';
+let CHARTS = {};
 
 const PORTFOLIO_BADGE = {
   Infinity:'badge-infinity', Nova:'badge-nova', Spark:'badge-spark', Victory:'badge-victory',
   Gold:'badge-gold', Crypto:'badge-crypto', Fund:'badge-fund', Legacy:'badge-legacy'
 };
+const PALETTE = ['#2a7a50','#e07830','#c47a2a','#6b3fa8','#2d6fa8','#8a5fb8','#d04a4a','#28a8a8','#a8a828','#6aaa85'];
 
 function getUrl(){ return localStorage.getItem(STORAGE_KEY) || ''; }
 function saveUrl(){
@@ -177,8 +227,30 @@ function saveUrl(){
   loadData();
 }
 
-function fmtUSD(n){ return '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function setCurrency(cur){
+  currentCurrency = cur;
+  document.getElementById('curUSD').classList.toggle('active', cur==='USD');
+  document.getElementById('curTHB').classList.toggle('active', cur==='THB');
+  if(RAW_DATA){ renderTracker(); renderDashboard(); }
+}
+
+function fmt(n, cur){
+  const symbol = (cur||currentCurrency)==='USD' ? '$' : '฿';
+  return symbol + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function fmtNum(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function val(h, usdKey, thbKey){ return currentCurrency==='USD' ? h[usdKey] : h[thbKey]; }
+
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ']};
+  document.getElementById('topTitle').textContent = titles[page][0];
+  document.getElementById('topSub').textContent = titles[page][1];
+  if(page==='dashboard' && RAW_DATA) renderDashboard();
+}
 
 async function loadData(){
   const url = getUrl();
@@ -195,17 +267,14 @@ async function loadData(){
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     RAW_DATA = data;
-    CACHED_DATA = data;
-    CACHED_TIME = new Date();
-    localStorage.setItem('ormmy_cache', JSON.stringify({data, time: CACHED_TIME.toISOString()}));
-    render();
+    localStorage.setItem('ormmy_cache', JSON.stringify({data, time: new Date().toISOString()}));
+    renderTracker(); renderDashboard();
     document.getElementById('connText').textContent = 'เชื่อมต่อสำเร็จ';
     document.getElementById('connDot').className = 'status-dot';
     document.getElementById('errorBanner').style.display = 'none';
     document.getElementById('staleBanner').style.display = 'none';
     document.getElementById('topbarUpdated').textContent = 'อัปเดต ' + new Date(data.generatedAt).toLocaleTimeString('th-TH');
   }catch(err){
-    // Fall back to cache if available, but ALWAYS show the error banner
     const cached = localStorage.getItem('ormmy_cache');
     document.getElementById('connText').textContent = 'เชื่อมต่อไม่สำเร็จ';
     document.getElementById('connDot').className = 'status-dot error';
@@ -216,35 +285,33 @@ async function loadData(){
       RAW_DATA = parsed.data;
       document.getElementById('staleBanner').style.display = 'flex';
       document.getElementById('staleTime').textContent = 'โหลดล่าสุดเมื่อ ' + new Date(parsed.time).toLocaleString('th-TH');
-      render();
+      renderTracker(); renderDashboard();
     } else {
       document.getElementById('loadingState').style.display = 'none';
     }
   }
 }
 
-function render(){
+function renderTracker(){
   document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('mainContent').style.display = 'block';
   const holdings = (RAW_DATA.holdings || []).filter(h => h.marketValueUSD > 0 || h.costUSD > 0);
   const portfolios = [...new Set(holdings.map(h=>h.portfolio))];
 
-  // filter tags
   const tagsEl = document.getElementById('filterTags');
   tagsEl.innerHTML = '<button class="tag ' + (currentFilter==='all'?'active':'') + '" onclick="setFilter(\'all\')">All</button>' +
     portfolios.map(p => `<button class="tag ${currentFilter===p?'active':''}" onclick="setFilter('${p}')">${p}</button>`).join('');
 
   const filtered = currentFilter==='all' ? holdings : holdings.filter(h=>h.portfolio===currentFilter);
 
-  const totalMV = filtered.reduce((s,h)=>s+(h.marketValueUSD||0),0);
-  const totalCost = filtered.reduce((s,h)=>s+(h.costUSD||0),0);
+  const totalMV = filtered.reduce((s,h)=>s+val(h,'marketValueUSD','marketValueTHB'),0);
+  const totalCost = filtered.reduce((s,h)=>s+val(h,'costUSD','costTHB'),0);
   const totalPnl = totalMV - totalCost;
   const pnlPct = totalCost>0 ? (totalPnl/totalCost*100) : 0;
 
-  document.getElementById('kTotal').textContent = fmtUSD(totalMV);
-  document.getElementById('kCost').textContent = fmtUSD(totalCost);
+  document.getElementById('kTotal').textContent = fmt(totalMV);
+  document.getElementById('kCost').textContent = fmt(totalCost);
   const pnlEl = document.getElementById('kPnl');
-  pnlEl.textContent = (totalPnl>=0?'+':'') + fmtUSD(totalPnl);
+  pnlEl.textContent = (totalPnl>=0?'+':'') + fmt(totalPnl);
   pnlEl.className = 'kpi-value ' + (totalPnl>=0?'pos':'neg');
   document.getElementById('kPnlPct').textContent = (totalPnl>=0?'+':'') + pnlPct.toFixed(1) + '%';
   document.getElementById('kCount').textContent = filtered.length;
@@ -255,37 +322,86 @@ function render(){
     tbody.innerHTML = '<tr><td colspan="9"><div class="empty">ไม่มี holdings ในกลุ่มนี้</div></td></tr>';
     return;
   }
-  const sorted = [...filtered].sort((a,b)=>b.marketValueUSD-a.marketValueUSD);
+  const sorted = [...filtered].sort((a,b)=>val(b,'marketValueUSD','marketValueTHB')-val(a,'marketValueUSD','marketValueTHB'));
   tbody.innerHTML = sorted.map(h=>{
-    const pnl = h.unrealizedUSD || 0;
+    const pnl = val(h,'unrealizedUSD','unrealizedTHB');
     const cls = pnl>=0?'pos':'neg';
     const badge = PORTFOLIO_BADGE[h.portfolio] || 'badge-legacy';
-    const priceDisplay = h.price>0 ? '$'+fmtNum(h.price) : '<span class="neutral">— ยังไม่ตั้งราคา</span>';
+    const priceDisplay = h.price>0 ? fmt(currentCurrency==='USD'?h.price:h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1)) : '<span class="neutral">— ยังไม่ตั้งราคา</span>';
     return `<tr>
       <td><span style="font-weight:500">${h.ticker}</span></td>
       <td><span class="badge ${badge}">${h.portfolio}</span></td>
       <td><span style="font-size:11px;color:var(--text3)">${h.sector||'—'}</span></td>
       <td><span class="mono">${fmtNum(h.units)}</span></td>
-      <td><span class="mono">$${fmtNum(h.avgCostUSD)}</span></td>
+      <td><span class="mono">${fmt(val(h,'avgCostUSD','avgCostUSD')* (currentCurrency==='THB'?(RAW_DATA.dashboard.fxRateUSDTHB||1):1))}</span></td>
       <td><span class="mono">${priceDisplay}</span></td>
-      <td><span class="mono">${fmtUSD(h.marketValueUSD)}</span></td>
-      <td class="${cls}"><span class="mono">${pnl>=0?'+':''}${fmtUSD(pnl)}</span></td>
+      <td><span class="mono">${fmt(val(h,'marketValueUSD','marketValueTHB'))}</span></td>
+      <td class="${cls}"><span class="mono">${pnl>=0?'+':''}${fmt(pnl)}</span></td>
       <td class="${cls}">${h.unrealizedPct!==null && h.unrealizedPct!==undefined ? (pnl>=0?'+':'')+h.unrealizedPct.toFixed(1)+'%' : '—'}</td>
     </tr>`;
   }).join('');
 }
 
-function setFilter(f){ currentFilter = f; render(); }
+function setFilter(f){ currentFilter = f; renderTracker(); }
 
-// init
+function destroyChart(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
+
+function renderDashboard(){
+  if(!RAW_DATA || !RAW_DATA.dashboard) return;
+  const d = RAW_DATA.dashboard;
+  const key = currentCurrency==='USD' ? 'valueUSD' : 'valueTHB';
+  const totalKey = currentCurrency==='USD' ? 'totalMarketValueUSD' : 'totalMarketValueTHB';
+
+  document.getElementById('dTotal').textContent = fmt(d[totalKey]);
+  document.getElementById('dFx').textContent = d.fxRateUSDTHB ? d.fxRateUSDTHB.toFixed(2) : '—';
+  const byPort = (d.byPortfolio||[]).filter(p=>p.valueUSD>0);
+  const bySec = (d.bySector||[]).filter(p=>p.valueUSD>0);
+  document.getElementById('dTopPort').textContent = byPort[0] ? byPort[0].name : '—';
+  document.getElementById('dTopSector').textContent = bySec[0] ? bySec[0].name : '—';
+
+  drawDonut('c-portfolio', 'leg-portfolio', byPort, key);
+  drawDonut('c-assettype', 'leg-assettype', (d.byAssetType||[]).filter(p=>p.valueUSD>0), key);
+  drawBar('c-sector', bySec, key);
+}
+
+function drawDonut(canvasId, legendId, items, key){
+  destroyChart(canvasId);
+  const labels = items.map(i=>i.name);
+  const values = items.map(i=>i[key]);
+  const colors = items.map((_,i)=>PALETTE[i%PALETTE.length]);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  CHARTS[canvasId] = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels, datasets:[{data:values, backgroundColor:colors, borderWidth:0, hoverOffset:6}]},
+    options:{responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)} (${items[c.dataIndex].pct}%)`}}}}
+  });
+  document.getElementById(legendId).innerHTML = items.map((it,i)=>
+    `<span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${it.name} ${it.pct}%</span>`
+  ).join('');
+}
+
+function drawBar(canvasId, items, key){
+  destroyChart(canvasId);
+  const labels = items.map(i=>i.name);
+  const values = items.map(i=>i[key]);
+  const h = Math.max(280, labels.length*40+60);
+  document.getElementById('sectorWrap').style.height = h+'px';
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  CHARTS[canvasId] = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets:[{data:values, backgroundColor:PALETTE, borderWidth:0, borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.x)} (${items[c.dataIndex].pct}%)`}}},
+      scales:{x:{beginAtZero:true, ticks:{color:'#6b8573', font:{size:11}}, grid:{color:'rgba(42,122,80,.06)'}},
+               y:{ticks:{color:'#3d5a47', font:{size:12}}, grid:{display:false}}}}
+  });
+}
+
 (function(){
   const cached = localStorage.getItem('ormmy_cache');
   if(cached){
-    try{
-      const parsed = JSON.parse(cached);
-      RAW_DATA = parsed.data;
-      render();
-    }catch(e){}
+    try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); }catch(e){}
   }
   loadData();
 })();
