@@ -90,6 +90,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .badge-fund{background:#e0f5f5;color:#1a7a7a}
 .badge-legacy{background:#f0f0f0;color:#888}
 .empty{text-align:center;padding:50px 20px;color:var(--text3)}
+.decision-header{display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);margin-bottom:8px}
+.action-buy{background:#e8f5ee;color:#1f5e3c;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.action-hold{background:#fff8e0;color:#8a6800;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.action-stop{background:#fde8e8;color:#c44b3a;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.score-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex-shrink:0;border:2px solid}
+.ring-green{border-color:var(--green);color:var(--green);background:#f0faf4}
+.ring-yellow{border-color:var(--amber);color:var(--amber);background:#fff8f0}
+.ring-red{border-color:var(--red);color:var(--red);background:#fff0f0}
+.zone-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px}
+.zone-z1{background:#e8f5ee;color:#1f5e3c}
+.zone-z2{background:#fff0e0;color:#c46a1a}
+.zone-z3{background:#fff8e0;color:#8a6800}
+.zone-no{background:#f5f5f5;color:#888}
+.badge-good{background:var(--green-light);color:var(--green2)}
+.badge-weak{background:#fdf0e0;color:var(--amber)}
+.badge-bad{background:#fde8e8;color:var(--red)}
 .banner{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r);margin-bottom:16px;font-size:13px}
 .banner-error{background:#fde8e8;color:#8a2a1e;border:1px solid #f0c0b8}
 .banner-stale{background:#fdf0e0;color:#8a5a10;border:1px solid #f0d8b0}
@@ -113,7 +129,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Thesis Monitor<span class="nav-badge">Phase 6</span></button>
     <button class="nav-item active" onclick="navigate('tracker')" id="nav-tracker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio Tracker</button>
     <button class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard</button>
-    <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Decision Engine<span class="nav-badge">Phase 4</span></button>
+    <button class="nav-item" onclick="navigate('decision')" id="nav-decision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Decision Engine</button>
     <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tools Lab<span class="nav-badge">Phase 5</span></button>
   </nav>
   <div class="sidebar-bottom">
@@ -201,6 +217,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         <div class="chart-wrap" id="sectorWrap" style="height:320px"><canvas id="c-sector"></canvas></div>
       </div>
     </div>
+    <!-- ===== PAGE: DECISION ENGINE ===== -->
+    <div class="page" id="page-decision">
+      <div class="section-title">Decision Engine</div>
+      <div class="section-sub">Buy / Hold / Stop — ประเมินจาก zone ราคา และ status ที่ตั้งไว้ใน Decision_Rules</div>
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="kpi"><div class="kpi-label">Buy Signals</div><div class="kpi-value pos" id="de-buy">—</div></div>
+        <div class="kpi"><div class="kpi-label">Hold</div><div class="kpi-value neutral" id="de-hold">—</div></div>
+        <div class="kpi"><div class="kpi-label">Stop / Watch</div><div class="kpi-value neg" id="de-stop">—</div></div>
+        <div class="kpi"><div class="kpi-label">In Buy Zone (Z1-Z3)</div><div class="kpi-value" id="de-zone">—</div></div>
+      </div>
+      <div class="tag-row" id="decisionTags">
+        <button class="tag active" onclick="filterDecision('all',this)">All</button>
+        <button class="tag" onclick="filterDecision('BUY',this)">Buy</button>
+        <button class="tag" onclick="filterDecision('HOLD',this)">Hold</button>
+        <button class="tag" onclick="filterDecision('STOP',this)">Stop / Watch</button>
+      </div>
+      <div id="decisionCards"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -246,10 +280,11 @@ function navigate(page){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.getElementById('nav-'+page).classList.add('active');
-  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ']};
+  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
   if(page==='dashboard' && RAW_DATA) renderDashboard();
+  if(page==='decision' && RAW_DATA) renderDecision();
 }
 
 async function loadData(){
@@ -268,7 +303,7 @@ async function loadData(){
     if(data.error) throw new Error(data.error);
     RAW_DATA = data;
     localStorage.setItem('ormmy_cache', JSON.stringify({data, time: new Date().toISOString()}));
-    renderTracker(); renderDashboard();
+    renderTracker(); renderDashboard(); renderDecision();
     document.getElementById('connText').textContent = 'เชื่อมต่อสำเร็จ';
     document.getElementById('connDot').className = 'status-dot';
     document.getElementById('errorBanner').style.display = 'none';
@@ -285,7 +320,7 @@ async function loadData(){
       RAW_DATA = parsed.data;
       document.getElementById('staleBanner').style.display = 'flex';
       document.getElementById('staleTime').textContent = 'โหลดล่าสุดเมื่อ ' + new Date(parsed.time).toLocaleString('th-TH');
-      renderTracker(); renderDashboard();
+      renderTracker(); renderDashboard(); renderDecision();
     } else {
       document.getElementById('loadingState').style.display = 'none';
     }
@@ -398,10 +433,68 @@ function drawBar(canvasId, items, key){
   });
 }
 
+let decisionFilter = 'all';
+
+function filterDecision(f, btn){
+  decisionFilter = f;
+  document.querySelectorAll('#decisionTags .tag').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderDecision();
+}
+
+function renderDecision(){
+  if(!RAW_DATA || !RAW_DATA.decisions) return;
+  const all = RAW_DATA.decisions;
+  const buys = all.filter(d=>d.action.includes('BUY')).length;
+  const holds = all.filter(d=>d.action==='HOLD').length;
+  const stops = all.filter(d=>d.action==='STOP').length;
+  const inZone = all.filter(d=>d.zone && d.zone!=='NO').length;
+  document.getElementById('de-buy').textContent = buys;
+  document.getElementById('de-hold').textContent = holds;
+  document.getElementById('de-stop').textContent = stops;
+  document.getElementById('de-zone').textContent = inZone;
+
+  const data = decisionFilter==='all' ? all :
+    decisionFilter==='BUY' ? all.filter(d=>d.action.includes('BUY')) :
+    decisionFilter==='HOLD' ? all.filter(d=>d.action==='HOLD') :
+    all.filter(d=>d.action==='STOP');
+
+  const container = document.getElementById('decisionCards');
+  if(!data.length){ container.innerHTML = '<div class="empty">ไม่มีรายการในกลุ่มนี้</div>'; return; }
+
+  container.innerHTML = data.map(d=>{
+    const actionClass = d.action.includes('BUY') ? 'action-buy' : d.action==='HOLD' ? 'action-hold' : 'action-stop';
+    const ringClass = d.status==='GREEN' ? 'ring-green' : d.status==='RED' ? 'ring-red' : 'ring-yellow';
+    const ringLabel = d.status==='GREEN' ? '🟢' : d.status==='RED' ? '🔴' : '🟡';
+    const metricsBadge = d.metricsStatus==='GOOD' ? 'badge-good' : d.metricsStatus==='WEAK' ? 'badge-weak' : 'badge-bad';
+    const zoneClass = d.zone==='Z1' ? 'zone-z1' : d.zone==='Z2' ? 'zone-z2' : d.zone==='Z3' ? 'zone-z3' : 'zone-no';
+    const priceCur = currentCurrency==='USD' ? d.price : d.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+    return `<div class="decision-header">
+      <div class="score-ring ${ringClass}" title="${d.status}">${ringLabel}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <span style="font-weight:600;font-size:15px">${d.ticker}</span>
+          <span class="${actionClass}">${d.action}</span>
+          <span class="badge ${metricsBadge}">Metrics: ${d.metricsStatus}</span>
+          <span class="badge ${d.invalidationRisk==='LOW'?'badge-good':d.invalidationRisk==='MEDIUM'?'badge-weak':'badge-bad'}">Risk: ${d.invalidationRisk}</span>
+          <span class="zone-badge ${zoneClass}">Zone: ${d.zone||'None'}</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:13px">${fmt(priceCur)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${d.thesis}</div>
+        <div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px">
+          <span style="font-weight:500;color:var(--text2)">Key metrics:</span> ${d.keyMetrics}
+          ${d.invalidation ? `&nbsp;·&nbsp; <span style="font-weight:500;color:var(--text2)">Invalidation:</span> ${d.invalidation}` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
 (function(){
   const cached = localStorage.getItem('ormmy_cache');
   if(cached){
-    try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); }catch(e){}
+    try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); }catch(e){}
   }
   loadData();
 })();
