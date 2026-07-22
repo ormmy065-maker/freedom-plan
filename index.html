@@ -211,6 +211,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           <div class="chart-legend" id="leg-assettype"></div>
         </div>
       </div>
+
+      <div class="card-title" style="margin-top:20px;margin-bottom:2px">Portfolio Breakdown</div>
+      <div class="card-sub">รายละเอียดแยกตามพอร์ต</div>
+      <div id="portBreakdown" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"></div>
+
       <div class="card-sm" style="margin-top:14px">
         <div class="card-title">Sector Exposure</div>
         <div class="card-sub">ความเข้มข้นตาม sector ทั้งพอร์ต</div>
@@ -277,6 +282,10 @@ const PORTFOLIO_BADGE = {
   Gold:'badge-gold', Crypto:'badge-crypto', Fund:'badge-fund', Legacy:'badge-legacy'
 };
 const PALETTE = ['#2a7a50','#e07830','#c47a2a','#6b3fa8','#2d6fa8','#8a5fb8','#d04a4a','#28a8a8','#a8a828','#6aaa85'];
+const PORTFOLIO_COLORS = {
+  Infinity:'#9ADCB4', Nova:'#9BCBEF', Victory:'#F5B3D0', Spark:'#F4A19C',
+  Gold:'#F3D98F', Fund:'#CDB0E6', Crypto:'#F2E39B', Legacy:'#D9D9D9', Unknown:'#D9D9D9'
+};
 
 function getUrl(){ return localStorage.getItem(STORAGE_KEY) || ''; }
 function saveUrl(){
@@ -423,16 +432,44 @@ function renderDashboard(){
   document.getElementById('dTopPort').textContent = byPort[0] ? byPort[0].name : '—';
   document.getElementById('dTopSector').textContent = bySec[0] ? bySec[0].name : '—';
 
-  drawDonut('c-portfolio', 'leg-portfolio', byPort, key);
+  drawDonut('c-portfolio', 'leg-portfolio', byPort, key, byPort.map(p=>PORTFOLIO_COLORS[p.name]||'#ccc'));
   drawDonut('c-assettype', 'leg-assettype', (d.byAssetType||[]).filter(p=>p.valueUSD>0), key);
   drawBar('c-sector', bySec, key);
+  renderPortfolioBreakdown(byPort, key);
 }
 
-function drawDonut(canvasId, legendId, items, key){
+function renderPortfolioBreakdown(byPort, key){
+  const container = document.getElementById('portBreakdown');
+  if(!container) return;
+  const holdings = (RAW_DATA.holdings||[]).filter(h=>h.marketValueUSD>0);
+  container.innerHTML = byPort.map(p=>{
+    const color = PORTFOLIO_COLORS[p.name] || '#ccc';
+    const items = holdings.filter(h=>h.portfolio===p.name).sort((a,b)=>b.marketValueUSD-a.marketValueUSD);
+    const pnl = items.reduce((s,h)=>s+h.unrealizedUSD,0);
+    const pnlDisp = currentCurrency==='USD' ? pnl : pnl*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+    const pnlCls = pnl>=0?'pos':'neg';
+    const top3 = items.slice(0,3).map(h=>h.ticker).join(', ');
+    return `<div class="card-sm" style="border-left:4px solid ${color}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="width:12px;height:12px;border-radius:3px;background:${color};display:inline-block"></span>
+        <span style="font-weight:600;font-size:14px">${p.name}</span>
+        <span style="margin-left:auto;font-weight:600">${fmt(p[key])}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--text3);flex-wrap:wrap">
+        <span>${p.pct}% ของพอร์ต</span>
+        <span>${items.length} ตัว</span>
+        <span class="${pnlCls}">${pnl>=0?'+':''}${fmt(pnlDisp)} unrealized</span>
+        <span>Top: ${top3||'—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function drawDonut(canvasId, legendId, items, key, explicitColors){
   destroyChart(canvasId);
   const labels = items.map(i=>i.name);
   const values = items.map(i=>i[key]);
-  const colors = items.map((_,i)=>PALETTE[i%PALETTE.length]);
+  const colors = explicitColors || items.map((_,i)=>PALETTE[i%PALETTE.length]);
   const ctx = document.getElementById(canvasId).getContext('2d');
   CHARTS[canvasId] = new Chart(ctx, {
     type:'doughnut',
@@ -467,7 +504,7 @@ let GROWTH_DATA = null;
 let growthPortFilter = 'all';
 let growthPeriod = '6M';
 let benchPortFilter = 'all';
-let benchSelected = 'SPY';
+let benchSelected = {SPY:true, QQQ:false, SOXX:false};
 let benchPeriod = '6M';
 
 const PERIODS = [
@@ -535,7 +572,7 @@ function renderGrowthControls(){
     `<button class="tag ${benchPortFilter==='all'?'active':''}" onclick="setBenchPort('all')">All</button>` +
     ports.map(p=>`<button class="tag ${benchPortFilter===p?'active':''}" onclick="setBenchPort('${p}')">${p}</button>`).join('');
   document.getElementById('benchTags').innerHTML = ['SPY','QQQ','SOXX'].map(b=>
-    `<button class="tag ${benchSelected===b?'active':''}" onclick="setBench('${b}')">${b}</button>`
+    `<button class="tag ${benchSelected[b]?'active':''}" onclick="toggleBench('${b}')">${b}</button>`
   ).join('');
   document.getElementById('benchPeriodTags').innerHTML = PERIODS.map(p=>
     `<button class="tag ${benchPeriod===p.key?'active':''}" onclick="setBenchPeriod('${p.key}')">${p.label}</button>`
@@ -545,7 +582,11 @@ function renderGrowthControls(){
 function setGrowthPort(p){ growthPortFilter = p; renderGrowthControls(); renderGrowthChart(); }
 function setGrowthPeriod(p){ growthPeriod = p; renderGrowthControls(); renderGrowthChart(); }
 function setBenchPort(p){ benchPortFilter = p; renderGrowthControls(); renderBenchmarkChart(); }
-function setBench(b){ benchSelected = b; renderGrowthControls(); renderBenchmarkChart(); }
+function toggleBench(b){
+  benchSelected[b] = !benchSelected[b];
+  if(!Object.values(benchSelected).some(v=>v)) benchSelected[b] = true; // keep at least one selected
+  renderGrowthControls(); renderBenchmarkChart();
+}
 function setBenchPeriod(p){ benchPeriod = p; renderGrowthControls(); renderBenchmarkChart(); }
 
 function twrValue(pt, scope){
@@ -598,19 +639,24 @@ function renderBenchmarkChart(){
   const portBase = portIdx[0];
   const portPct = portIdx.map(v => round2((v/portBase - 1) * 100));
 
-  const benchRaw = series.map(pt => (pt.benchmarks && pt.benchmarks[benchSelected]) || null);
-  const firstBenchIdx = benchRaw.findIndex(v=>v);
-  const benchBase = firstBenchIdx>=0 ? benchRaw[firstBenchIdx] : 1;
-  const benchPct = benchRaw.map(v => v ? round2((v/benchBase - 1) * 100) : null);
+  const benchColors = {SPY:'#2d6fa8', QQQ:'#c47a2a', SOXX:'#8a5fb8'};
+  const datasets = [
+    {label: 'พอร์ต (' + (benchPortFilter==='all'?'All':benchPortFilter) + ')', data: portPct, borderColor:'#2a7a50', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2.5}
+  ];
+  ['SPY','QQQ','SOXX'].forEach(b=>{
+    if(!benchSelected[b]) return;
+    const raw = series.map(pt => (pt.benchmarks && pt.benchmarks[b]) || null);
+    const firstIdx = raw.findIndex(v=>v);
+    const base = firstIdx>=0 ? raw[firstIdx] : 1;
+    const pct = raw.map(v => v ? round2((v/base - 1) * 100) : null);
+    datasets.push({label:b, data:pct, borderColor:benchColors[b], backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:1.5, borderDash:[4,3]});
+  });
 
   destroyChart('c-benchmark');
   const ctx = document.getElementById('c-benchmark').getContext('2d');
   CHARTS['c-benchmark'] = new Chart(ctx, {
     type:'line',
-    data:{labels, datasets:[
-      {label: 'พอร์ต (' + (benchPortFilter==='all'?'All':benchPortFilter) + ')', data: portPct, borderColor:'#2a7a50', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2.5},
-      {label: benchSelected, data: benchPct, borderColor:'#c47a2a', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:1.5, borderDash:[4,3]}
-    ]},
+    data:{labels, datasets},
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}, color:'#3d5a47'}},
         tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(2)}%`}}},
