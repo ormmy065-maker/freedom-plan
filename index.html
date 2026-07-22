@@ -91,6 +91,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .badge-legacy{background:#f0f0f0;color:#888}
 .empty{text-align:center;padding:50px 20px;color:var(--text3)}
 .decision-header{display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);margin-bottom:8px}
+.dc-card{padding:18px 20px;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--surface);margin-bottom:12px}
+.dc-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.dc-title{flex:1;min-width:0}
+.dc-ticker{font-size:21px;font-weight:700;letter-spacing:-.3px;color:var(--text1)}
+.dc-sub{display:flex;gap:10px;margin-top:2px}
+.dc-sub span{font-size:11px;font-weight:500}
+.dc-price-block{text-align:right}
+.dc-price-val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text1)}
+.dc-action{display:inline-block;margin-top:4px;padding:5px 16px;border-radius:20px;font-size:13px;font-weight:700}
+.dc-zones{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.zone-chip{padding:7px 14px;border-radius:10px;font-size:12px;font-weight:600;border:2px solid var(--border2);color:var(--text3);font-family:var(--mono)}
+.zone-chip.current{border-color:var(--green);color:var(--green2);background:var(--green-light);box-shadow:0 0 0 2px rgba(42,122,80,.12)}
+.zone-chip .zlabel{font-family:var(--font);font-weight:700;margin-right:5px}
+.dc-detail{font-size:11.5px;color:var(--text3);line-height:1.7;border-top:1px solid var(--border);padding-top:9px;margin-top:2px}
+.dc-detail b{color:var(--text2);font-weight:600}
 .action-buy{background:#e8f5ee;color:#1f5e3c;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
 .action-hold{background:#fff8e0;color:#8a6800;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
 .action-stop{background:#fde8e8;color:#c44b3a;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
@@ -283,8 +298,8 @@ const PORTFOLIO_BADGE = {
 };
 const PALETTE = ['#2a7a50','#e07830','#c47a2a','#6b3fa8','#2d6fa8','#8a5fb8','#d04a4a','#28a8a8','#a8a828','#6aaa85'];
 const PORTFOLIO_COLORS = {
-  Infinity:'#9ADCB4', Nova:'#9BCBEF', Victory:'#F5B3D0', Spark:'#F4A19C',
-  Gold:'#F3D98F', Fund:'#CDB0E6', Crypto:'#F2E39B', Legacy:'#D9D9D9', Unknown:'#D9D9D9'
+  Infinity:'#2a7a50', Nova:'#2d6fa8', Victory:'#c2447a', Spark:'#c44b3a',
+  Gold:'#c9971e', Fund:'#6b3fa8', Crypto:'#d4b106', Legacy:'#999999', Unknown:'#999999'
 };
 
 function getUrl(){ return localStorage.getItem(STORAGE_KEY) || ''; }
@@ -698,24 +713,38 @@ function renderDecision(){
     const ringClass = d.status==='GREEN' ? 'ring-green' : d.status==='RED' ? 'ring-red' : 'ring-yellow';
     const ringLabel = d.status==='GREEN' ? '🟢' : d.status==='RED' ? '🔴' : '🟡';
     const metricsBadge = d.metricsStatus==='GOOD' ? 'badge-good' : d.metricsStatus==='WEAK' ? 'badge-weak' : 'badge-bad';
-    const zoneClass = d.zone==='Z1' ? 'zone-z1' : d.zone==='Z2' ? 'zone-z2' : d.zone==='Z3' ? 'zone-z3' : 'zone-no';
+    const riskBadge = d.invalidationRisk==='LOW' ? 'badge-good' : d.invalidationRisk==='MEDIUM' ? 'badge-weak' : 'badge-bad';
     const priceCur = currentCurrency==='USD' ? d.price : d.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-    return `<div class="decision-header">
-      <div class="score-ring ${ringClass}" title="${d.status}">${ringLabel}</div>
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-          <span style="font-weight:600;font-size:15px">${d.ticker}</span>
-          <span class="${actionClass}">${d.action}</span>
-          <span class="badge ${metricsBadge}">Metrics: ${d.metricsStatus}</span>
-          <span class="badge ${d.invalidationRisk==='LOW'?'badge-good':d.invalidationRisk==='MEDIUM'?'badge-weak':'badge-bad'}">Risk: ${d.invalidationRisk}</span>
-          <span class="zone-badge ${zoneClass}">Zone: ${d.zone||'None'}</span>
-          <span style="margin-left:auto;font-family:var(--mono);font-size:13px">${fmt(priceCur)}</span>
+    const zoneChip = (key, label, range) => {
+      if(range[0]==null || range[1]==null) return '';
+      const isCurrent = d.zone === key;
+      const lo = currentCurrency==='USD'?range[0]:range[0]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+      const hi = currentCurrency==='USD'?range[1]:range[1]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+      return `<span class="zone-chip ${isCurrent?'current':''}"><span class="zlabel">${label}</span>${fmt(Math.min(lo,hi))}–${fmt(Math.max(lo,hi))}</span>`;
+    };
+    return `<div class="dc-card">
+      <div class="dc-top">
+        <div class="score-ring ${ringClass}" title="${d.status}">${ringLabel}</div>
+        <div class="dc-title">
+          <div class="dc-ticker">${d.ticker}</div>
+          <div class="dc-sub">
+            <span class="badge ${metricsBadge}">Metrics: ${d.metricsStatus}</span>
+            <span class="badge ${riskBadge}">Risk: ${d.invalidationRisk}</span>
+          </div>
         </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${d.thesis}</div>
-        <div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px">
-          <span style="font-weight:500;color:var(--text2)">Key metrics:</span> ${d.keyMetrics}
-          ${d.invalidation ? `&nbsp;·&nbsp; <span style="font-weight:500;color:var(--text2)">Invalidation:</span> ${d.invalidation}` : ''}
+        <div class="dc-price-block">
+          <div class="dc-price-val">${fmt(priceCur)}</div>
+          <div class="dc-action ${actionClass}">${d.action}</div>
         </div>
+      </div>
+      <div class="dc-zones">
+        ${zoneChip('Z1','Z1',d.zones?.z1||[])}
+        ${zoneChip('Z2','Z2',d.zones?.z2||[])}
+        ${zoneChip('Z3','Z3',d.zones?.z3||[])}
+      </div>
+      <div class="dc-detail">
+        <b>Thesis:</b> ${d.thesis} &nbsp;·&nbsp; <b>Key metrics:</b> ${d.keyMetrics}
+        ${d.invalidation ? ` &nbsp;·&nbsp; <b>Invalidation:</b> ${d.invalidation}` : ''}
       </div>
     </div>`;
   }).join('');
