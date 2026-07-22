@@ -216,6 +216,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         <div class="card-sub">ความเข้มข้นตาม sector ทั้งพอร์ต</div>
         <div class="chart-wrap" id="sectorWrap" style="height:320px"><canvas id="c-sector"></canvas></div>
       </div>
+
+      <div class="card-sm" style="margin-top:14px">
+        <div class="card-title">Portfolio Growth</div>
+        <div class="card-sub" id="growthNote">การเติบโตของมูลค่าพอร์ต (คำนวณจาก Infinity/Nova/Spark/Victory เท่านั้น — ยังไม่รวม Gold/Crypto/Fund)</div>
+        <div class="tag-row" id="growthPortTags" style="margin:0 0 12px"></div>
+        <div class="chart-wrap" style="height:280px"><canvas id="c-growth"></canvas></div>
+      </div>
+
+      <div class="card-sm" style="margin-top:14px">
+        <div class="card-title">พอร์ตเทียบกับ Benchmark</div>
+        <div class="card-sub">Indexed ให้เริ่มที่ 100 เท่ากัน — เทียบทิศทาง ไม่ใช่ตัวเลขผลตอบแทนที่แม่นยำ 100% (พอร์ตมีเงินใหม่เข้าเรื่อยๆ)</div>
+        <div class="tag-row" id="benchTags"></div>
+        <div class="chart-wrap" style="height:280px"><canvas id="c-benchmark"></canvas></div>
+      </div>
     </div>
     <!-- ===== PAGE: DECISION ENGINE ===== -->
     <div class="page" id="page-decision">
@@ -265,7 +279,8 @@ function setCurrency(cur){
   currentCurrency = cur;
   document.getElementById('curUSD').classList.toggle('active', cur==='USD');
   document.getElementById('curTHB').classList.toggle('active', cur==='THB');
-  if(RAW_DATA){ renderTracker(); renderDashboard(); }
+  if(RAW_DATA){ renderTracker(); renderDashboard(); renderDecision(); }
+  if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); }
 }
 
 function fmt(n, cur){
@@ -283,7 +298,7 @@ function navigate(page){
   const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
-  if(page==='dashboard' && RAW_DATA) renderDashboard();
+  if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); } }
   if(page==='decision' && RAW_DATA) renderDecision();
 }
 
@@ -304,6 +319,7 @@ async function loadData(){
     RAW_DATA = data;
     localStorage.setItem('ormmy_cache', JSON.stringify({data, time: new Date().toISOString()}));
     renderTracker(); renderDashboard(); renderDecision();
+    loadGrowth();
     document.getElementById('connText').textContent = 'เชื่อมต่อสำเร็จ';
     document.getElementById('connDot').className = 'status-dot';
     document.getElementById('errorBanner').style.display = 'none';
@@ -321,6 +337,7 @@ async function loadData(){
       document.getElementById('staleBanner').style.display = 'flex';
       document.getElementById('staleTime').textContent = 'โหลดล่าสุดเมื่อ ' + new Date(parsed.time).toLocaleString('th-TH');
       renderTracker(); renderDashboard(); renderDecision();
+      loadGrowth();
     } else {
       document.getElementById('loadingState').style.display = 'none';
     }
@@ -329,7 +346,7 @@ async function loadData(){
 
 function renderTracker(){
   document.getElementById('loadingState').style.display = 'none';
-  const holdings = (RAW_DATA.holdings || []).filter(h => h.marketValueUSD > 0 || h.costUSD > 0);
+  const holdings = (RAW_DATA.holdings || []).filter(h => h.portfolio !== 'Legacy' && (h.marketValueUSD > 0 || h.costUSD > 0));
   const portfolios = [...new Set(holdings.map(h=>h.portfolio))];
 
   const tagsEl = document.getElementById('filterTags');
@@ -434,6 +451,120 @@ function drawBar(canvasId, items, key){
 }
 
 let decisionFilter = 'all';
+let GROWTH_DATA = null;
+let growthPortFilter = 'all';
+let growthUnit = 'currency'; // 'currency' | 'pct'
+let benchSelected = {SPY:true, QQQ:true, SOXX:true};
+
+async function loadGrowth(){
+  const url = getUrl();
+  if(!url) return;
+  try{
+    const res = await fetch(url + '?action=growth');
+    const data = await res.json();
+    if(data.series){
+      GROWTH_DATA = data;
+      localStorage.setItem('ormmy_growth_cache', JSON.stringify(data));
+      renderGrowthControls();
+      renderGrowthChart();
+      renderBenchmarkChart();
+    }
+  }catch(e){
+    const cached = localStorage.getItem('ormmy_growth_cache');
+    if(cached){ GROWTH_DATA = JSON.parse(cached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); }
+  }
+}
+
+function renderGrowthControls(){
+  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
+  const ports = new Set();
+  GROWTH_DATA.series.forEach(pt => Object.keys(pt.byPortfolio||{}).forEach(p=>ports.add(p)));
+  const portTagsEl = document.getElementById('growthPortTags');
+  portTagsEl.innerHTML =
+    `<button class="tag ${growthPortFilter==='all'?'active':''}" onclick="setGrowthPort('all')">All Portfolios</button>` +
+    [...ports].map(p=>`<button class="tag ${growthPortFilter===p?'active':''}" onclick="setGrowthPort('${p}')">${p}</button>`).join('') +
+    `<span style="margin-left:auto"></span>` +
+    `<button class="tag ${growthUnit==='currency'?'active':''}" onclick="setGrowthUnit('currency')">${currentCurrency}</button>` +
+    `<button class="tag ${growthUnit==='pct'?'active':''}" onclick="setGrowthUnit('pct')">% Growth</button>`;
+
+  const benchTagsEl = document.getElementById('benchTags');
+  benchTagsEl.innerHTML = ['SPY','QQQ','SOXX'].map(b=>
+    `<button class="tag ${benchSelected[b]?'active':''}" onclick="toggleBench('${b}')">${b}</button>`
+  ).join('');
+}
+
+function setGrowthPort(p){ growthPortFilter = p; renderGrowthControls(); renderGrowthChart(); }
+function setGrowthUnit(u){ growthUnit = u; renderGrowthControls(); renderGrowthChart(); }
+function toggleBench(b){ benchSelected[b] = !benchSelected[b]; renderGrowthControls(); renderBenchmarkChart(); }
+
+function seriesValue(pt){
+  if(growthPortFilter === 'all'){
+    return currentCurrency==='USD' ? pt.totalUSD : pt.totalTHB;
+  }
+  const v = (pt.byPortfolio && pt.byPortfolio[growthPortFilter]) || 0;
+  return currentCurrency==='USD' ? v : v * (RAW_DATA.dashboard.fxRateUSDTHB||1);
+}
+
+function renderGrowthChart(){
+  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
+  const series = GROWTH_DATA.series;
+  const raw = series.map(seriesValue);
+  const labels = series.map(pt => pt.date);
+  let values = raw;
+  let label = growthPortFilter==='all' ? 'All Portfolios' : growthPortFilter;
+  if(growthUnit === 'pct'){
+    const base = raw.find(v => v > 0) || 1;
+    values = raw.map(v => round2((v/base - 1) * 100));
+  }
+  destroyChart('c-growth');
+  const ctx = document.getElementById('c-growth').getContext('2d');
+  CHARTS['c-growth'] = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets:[{label, data:values, borderColor:'#2a7a50', backgroundColor:'rgba(42,122,80,.08)', fill:true, tension:.25, pointRadius:0, borderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=> growthUnit==='pct' ? ` ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(1)}%` : ` ${fmt(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:10}, grid:{display:false}},
+               y:{ticks:{color:'#6b8573', font:{size:11}, callback:v=> growthUnit==='pct' ? v+'%' : fmt(v)}, grid:{color:'rgba(42,122,80,.06)'}}}}
+  });
+}
+
+function round2(n){ return Math.round(n*100)/100; }
+
+function renderBenchmarkChart(){
+  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
+  const series = GROWTH_DATA.series;
+  const labels = series.map(pt => pt.date);
+  const portRaw = series.map(seriesValue.bind(null));
+  const portBase = portRaw.find(v=>v>0) || 1;
+  const datasets = [{
+    label: 'พอร์ต (' + (growthPortFilter==='all'?'All':growthPortFilter) + ')',
+    data: portRaw.map(v => round2((v/portBase - 1) * 100)),
+    borderColor:'#2a7a50', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2.5
+  }];
+  const benchColors = {SPY:'#2d6fa8', QQQ:'#c47a2a', SOXX:'#8a5fb8'};
+  ['SPY','QQQ','SOXX'].forEach(b=>{
+    if(!benchSelected[b]) return;
+    const raw = series.map(pt => (pt.benchmarks && pt.benchmarks[b]) || null);
+    const base = raw.find(v=>v) || 1;
+    datasets.push({
+      label: b,
+      data: raw.map(v => v ? round2((v/base - 1) * 100) : null),
+      borderColor: benchColors[b], backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:1.5, borderDash:[4,3]
+    });
+  });
+  destroyChart('c-benchmark');
+  const ctx = document.getElementById('c-benchmark').getContext('2d');
+  CHARTS['c-benchmark'] = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}, color:'#3d5a47'}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(1)}%`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:10}, grid:{display:false}},
+               y:{ticks:{color:'#6b8573', font:{size:11}, callback:v=>v+'%'}, grid:{color:'rgba(42,122,80,.06)'}}}}
+  });
+}
+
 
 function filterDecision(f, btn){
   decisionFilter = f;
@@ -493,8 +624,12 @@ function renderDecision(){
 
 (function(){
   const cached = localStorage.getItem('ormmy_cache');
+  const growthCached = localStorage.getItem('ormmy_growth_cache');
   if(cached){
     try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); }catch(e){}
+  }
+  if(growthCached){
+    try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); }catch(e){}
   }
   loadData();
 })();
