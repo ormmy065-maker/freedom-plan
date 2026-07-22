@@ -505,18 +505,30 @@ function seriesValue(pt){
   return currentCurrency==='USD' ? v : v * (RAW_DATA.dashboard.fxRateUSDTHB||1);
 }
 
+const GROWTH_MIN_BASE = 300; // USD — skip early tiny-DCA points that distort % calculations
+
 function renderGrowthChart(){
   if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
-  const series = GROWTH_DATA.series;
+  let series = GROWTH_DATA.series;
+  if(growthUnit === 'pct'){
+    const startIdx = series.findIndex(pt => pt.totalUSD >= GROWTH_MIN_BASE);
+    if(startIdx > 0) series = series.slice(startIdx);
+  }
   const raw = series.map(seriesValue);
   const labels = series.map(pt => pt.date);
   let values = raw;
   let label = growthPortFilter==='all' ? 'All Portfolios' : growthPortFilter;
   if(growthUnit === 'pct'){
-    const base = raw.find(v => v > 0) || 1;
+    const base = raw[0] || 1;
     values = raw.map(v => round2((v/base - 1) * 100));
   }
   destroyChart('c-growth');
+  const noteEl = document.getElementById('growthNote');
+  if(growthUnit === 'pct'){
+    noteEl.textContent = `% เทียบจากจุดเริ่ม ${labels[0]} (ตัดช่วงแรกสุดที่พอร์ตยังเล็กมากออก เพื่อไม่ให้ % บิดเบือน)`;
+  } else {
+    noteEl.textContent = 'การเติบโตของมูลค่าพอร์ต (คำนวณจาก Infinity/Nova/Spark/Victory เท่านั้น — ยังไม่รวม Gold/Crypto/Fund)';
+  }
   const ctx = document.getElementById('c-growth').getContext('2d');
   CHARTS['c-growth'] = new Chart(ctx, {
     type:'line',
@@ -532,10 +544,12 @@ function round2(n){ return Math.round(n*100)/100; }
 
 function renderBenchmarkChart(){
   if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
-  const series = GROWTH_DATA.series;
+  let series = GROWTH_DATA.series;
+  const startIdx = series.findIndex(pt => pt.totalUSD >= GROWTH_MIN_BASE);
+  if(startIdx > 0) series = series.slice(startIdx);
   const labels = series.map(pt => pt.date);
   const portRaw = series.map(seriesValue.bind(null));
-  const portBase = portRaw.find(v=>v>0) || 1;
+  const portBase = portRaw[0] || 1;
   const datasets = [{
     label: 'พอร์ต (' + (growthPortFilter==='all'?'All':growthPortFilter) + ')',
     data: portRaw.map(v => round2((v/portBase - 1) * 100)),
