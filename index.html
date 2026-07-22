@@ -219,15 +219,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
       <div class="card-sm" style="margin-top:14px">
         <div class="card-title">Portfolio Growth</div>
-        <div class="card-sub" id="growthNote">การเติบโตของมูลค่าพอร์ต (คำนวณจาก Infinity/Nova/Spark/Victory เท่านั้น — ยังไม่รวม Gold/Crypto/Fund)</div>
-        <div class="tag-row" id="growthPortTags" style="margin:0 0 12px"></div>
+        <div class="card-sub" id="growthNote">ผลตอบแทนแบบ Time-Weighted Return (ไม่รวมผลของเงินต้นใหม่ที่เติมเข้า)</div>
+        <div class="tag-row" id="growthPortTags" style="margin-bottom:8px"></div>
+        <div class="tag-row" id="growthPeriodTags" style="margin-top:0"></div>
+        <div id="growthBadge" style="margin:4px 0 10px;font-size:22px;font-weight:600"></div>
         <div class="chart-wrap" style="height:280px"><canvas id="c-growth"></canvas></div>
       </div>
 
       <div class="card-sm" style="margin-top:14px">
         <div class="card-title">พอร์ตเทียบกับ Benchmark</div>
-        <div class="card-sub">Indexed ให้เริ่มที่ 100 เท่ากัน — เทียบทิศทาง ไม่ใช่ตัวเลขผลตอบแทนที่แม่นยำ 100% (พอร์ตมีเงินใหม่เข้าเรื่อยๆ)</div>
-        <div class="tag-row" id="benchTags"></div>
+        <div class="card-sub">Time-Weighted Return เทียบกับดัชนี — เลือกพอร์ตและดัชนีที่จะเทียบได้อิสระ</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Portfolio</div>
+            <div class="tag-row" id="benchPortTags" style="margin:0"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Benchmark</div>
+            <div class="tag-row" id="benchTags" style="margin:0"></div>
+          </div>
+        </div>
+        <div class="tag-row" id="benchPeriodTags" style="margin-top:0"></div>
         <div class="chart-wrap" style="height:280px"><canvas id="c-benchmark"></canvas></div>
       </div>
     </div>
@@ -453,8 +465,19 @@ function drawBar(canvasId, items, key){
 let decisionFilter = 'all';
 let GROWTH_DATA = null;
 let growthPortFilter = 'all';
-let growthUnit = 'currency'; // 'currency' | 'pct'
-let benchSelected = {SPY:true, QQQ:true, SOXX:true};
+let growthPeriod = '6M';
+let benchPortFilter = 'all';
+let benchSelected = 'SPY';
+let benchPeriod = '6M';
+
+const PERIODS = [
+  {key:'1M', label:'1M', days:30},
+  {key:'6M', label:'6M', days:182},
+  {key:'YTD', label:'YTD', ytd:true},
+  {key:'1Y', label:'1Y', days:365},
+  {key:'5Y', label:'5Y', days:1825},
+  {key:'MAX', label:'สูงสุด', days:99999}
+];
 
 async function loadGrowth(){
   const url = getUrl();
@@ -475,106 +498,123 @@ async function loadGrowth(){
   }
 }
 
+function periodStartDate(periodKey){
+  const now = new Date();
+  const p = PERIODS.find(x=>x.key===periodKey);
+  if(!p) return null;
+  if(p.ytd) return new Date(now.getFullYear(), 0, 1);
+  const d = new Date(now); d.setDate(d.getDate() - p.days);
+  return d;
+}
+
+function sliceByPeriod(series, periodKey){
+  const start = periodStartDate(periodKey);
+  if(!start) return series;
+  const idx = series.findIndex(pt => new Date(pt.date) >= start);
+  return idx > 0 ? series.slice(idx) : series;
+}
+
+function getPortfolioList(){
+  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return [];
+  const ports = new Set();
+  GROWTH_DATA.series.forEach(pt => Object.keys(pt.twrIndexByPortfolio||{}).forEach(p=>{ if(pt.twrIndexByPortfolio[p]!==null) ports.add(p); }));
+  return [...ports];
+}
+
 function renderGrowthControls(){
   if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
-  const ports = new Set();
-  GROWTH_DATA.series.forEach(pt => Object.keys(pt.byPortfolio||{}).forEach(p=>ports.add(p)));
-  const portTagsEl = document.getElementById('growthPortTags');
-  portTagsEl.innerHTML =
+  const ports = getPortfolioList();
+  document.getElementById('growthPortTags').innerHTML =
     `<button class="tag ${growthPortFilter==='all'?'active':''}" onclick="setGrowthPort('all')">All Portfolios</button>` +
-    [...ports].map(p=>`<button class="tag ${growthPortFilter===p?'active':''}" onclick="setGrowthPort('${p}')">${p}</button>`).join('') +
-    `<span style="margin-left:auto"></span>` +
-    `<button class="tag ${growthUnit==='currency'?'active':''}" onclick="setGrowthUnit('currency')">${currentCurrency}</button>` +
-    `<button class="tag ${growthUnit==='pct'?'active':''}" onclick="setGrowthUnit('pct')">% Growth</button>`;
+    ports.map(p=>`<button class="tag ${growthPortFilter===p?'active':''}" onclick="setGrowthPort('${p}')">${p}</button>`).join('');
+  document.getElementById('growthPeriodTags').innerHTML = PERIODS.map(p=>
+    `<button class="tag ${growthPeriod===p.key?'active':''}" onclick="setGrowthPeriod('${p.key}')">${p.label}</button>`
+  ).join('');
 
-  const benchTagsEl = document.getElementById('benchTags');
-  benchTagsEl.innerHTML = ['SPY','QQQ','SOXX'].map(b=>
-    `<button class="tag ${benchSelected[b]?'active':''}" onclick="toggleBench('${b}')">${b}</button>`
+  document.getElementById('benchPortTags').innerHTML =
+    `<button class="tag ${benchPortFilter==='all'?'active':''}" onclick="setBenchPort('all')">All</button>` +
+    ports.map(p=>`<button class="tag ${benchPortFilter===p?'active':''}" onclick="setBenchPort('${p}')">${p}</button>`).join('');
+  document.getElementById('benchTags').innerHTML = ['SPY','QQQ','SOXX'].map(b=>
+    `<button class="tag ${benchSelected===b?'active':''}" onclick="setBench('${b}')">${b}</button>`
+  ).join('');
+  document.getElementById('benchPeriodTags').innerHTML = PERIODS.map(p=>
+    `<button class="tag ${benchPeriod===p.key?'active':''}" onclick="setBenchPeriod('${p.key}')">${p.label}</button>`
   ).join('');
 }
 
 function setGrowthPort(p){ growthPortFilter = p; renderGrowthControls(); renderGrowthChart(); }
-function setGrowthUnit(u){ growthUnit = u; renderGrowthControls(); renderGrowthChart(); }
-function toggleBench(b){ benchSelected[b] = !benchSelected[b]; renderGrowthControls(); renderBenchmarkChart(); }
+function setGrowthPeriod(p){ growthPeriod = p; renderGrowthControls(); renderGrowthChart(); }
+function setBenchPort(p){ benchPortFilter = p; renderGrowthControls(); renderBenchmarkChart(); }
+function setBench(b){ benchSelected = b; renderGrowthControls(); renderBenchmarkChart(); }
+function setBenchPeriod(p){ benchPeriod = p; renderGrowthControls(); renderBenchmarkChart(); }
 
-function seriesValue(pt){
-  if(growthPortFilter === 'all'){
-    return currentCurrency==='USD' ? pt.totalUSD : pt.totalTHB;
-  }
-  const v = (pt.byPortfolio && pt.byPortfolio[growthPortFilter]) || 0;
-  return currentCurrency==='USD' ? v : v * (RAW_DATA.dashboard.fxRateUSDTHB||1);
-}
-
-const GROWTH_MIN_BASE = 300; // USD — skip early tiny-DCA points that distort % calculations
-
-function renderGrowthChart(){
-  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
-  let series = GROWTH_DATA.series;
-  if(growthUnit === 'pct'){
-    const startIdx = series.findIndex(pt => pt.totalUSD >= GROWTH_MIN_BASE);
-    if(startIdx > 0) series = series.slice(startIdx);
-  }
-  const raw = series.map(seriesValue);
-  const labels = series.map(pt => pt.date);
-  let values = raw;
-  let label = growthPortFilter==='all' ? 'All Portfolios' : growthPortFilter;
-  if(growthUnit === 'pct'){
-    const base = raw[0] || 1;
-    values = raw.map(v => round2((v/base - 1) * 100));
-  }
-  destroyChart('c-growth');
-  const noteEl = document.getElementById('growthNote');
-  if(growthUnit === 'pct'){
-    noteEl.textContent = `% เทียบจากจุดเริ่ม ${labels[0]} (ตัดช่วงแรกสุดที่พอร์ตยังเล็กมากออก เพื่อไม่ให้ % บิดเบือน)`;
-  } else {
-    noteEl.textContent = 'การเติบโตของมูลค่าพอร์ต (คำนวณจาก Infinity/Nova/Spark/Victory เท่านั้น — ยังไม่รวม Gold/Crypto/Fund)';
-  }
-  const ctx = document.getElementById('c-growth').getContext('2d');
-  CHARTS['c-growth'] = new Chart(ctx, {
-    type:'line',
-    data:{labels, datasets:[{label, data:values, borderColor:'#2a7a50', backgroundColor:'rgba(42,122,80,.08)', fill:true, tension:.25, pointRadius:0, borderWidth:2}]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=> growthUnit==='pct' ? ` ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(1)}%` : ` ${fmt(c.parsed.y)}`}}},
-      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:10}, grid:{display:false}},
-               y:{ticks:{color:'#6b8573', font:{size:11}, callback:v=> growthUnit==='pct' ? v+'%' : fmt(v)}, grid:{color:'rgba(42,122,80,.06)'}}}}
-  });
+function twrValue(pt, scope){
+  if(scope==='all') return pt.twrIndexAll;
+  return (pt.twrIndexByPortfolio && pt.twrIndexByPortfolio[scope]) || null;
 }
 
 function round2(n){ return Math.round(n*100)/100; }
 
+function renderGrowthChart(){
+  if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
+  let series = sliceByPeriod(GROWTH_DATA.series, growthPeriod);
+  series = series.filter(pt => twrValue(pt, growthPortFilter) !== null);
+  if(!series.length){ document.getElementById('growthBadge').textContent = 'ไม่มีข้อมูลในช่วงนี้'; return; }
+
+  const labels = series.map(pt => pt.date);
+  const idxVals = series.map(pt => twrValue(pt, growthPortFilter));
+  const base = idxVals[0];
+  const pctVals = idxVals.map(v => round2((v/base - 1) * 100));
+  const currVals = series.map(pt => growthPortFilter==='all'
+    ? (currentCurrency==='USD'?pt.totalUSD:pt.totalTHB)
+    : (currentCurrency==='USD'?(pt.byPortfolio[growthPortFilter]||0):(pt.byPortfolio[growthPortFilter]||0)*(RAW_DATA?.dashboard?.fxRateUSDTHB||1)));
+
+  const totalReturn = pctVals[pctVals.length-1];
+  const latestValue = currVals[currVals.length-1];
+  const badgeColor = totalReturn>=0 ? 'var(--emerald)' : 'var(--red)';
+  document.getElementById('growthBadge').innerHTML =
+    `<span style="color:var(--text1)">${fmt(latestValue)}</span>&nbsp; <span style="color:${badgeColor};font-size:16px">${totalReturn>=0?'+':''}${totalReturn.toFixed(2)}% (${PERIODS.find(p=>p.key===growthPeriod).label})</span>`;
+
+  destroyChart('c-growth');
+  const ctx = document.getElementById('c-growth').getContext('2d');
+  CHARTS['c-growth'] = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets:[{data:pctVals, borderColor: totalReturn>=0?'#2a7a50':'#c44b3a', backgroundColor: totalReturn>=0?'rgba(42,122,80,.08)':'rgba(196,75,58,.08)', fill:true, tension:.25, pointRadius:0, borderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(2)}% (return, ไม่รวมเงินต้นใหม่)`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:8}, grid:{display:false}},
+               y:{ticks:{color:'#6b8573', font:{size:11}, callback:v=>v+'%'}, grid:{color:'rgba(42,122,80,.06)'}}}}
+  });
+}
+
 function renderBenchmarkChart(){
   if(!GROWTH_DATA || !GROWTH_DATA.series.length) return;
-  let series = GROWTH_DATA.series;
-  const startIdx = series.findIndex(pt => pt.totalUSD >= GROWTH_MIN_BASE);
-  if(startIdx > 0) series = series.slice(startIdx);
+  let series = sliceByPeriod(GROWTH_DATA.series, benchPeriod);
+  series = series.filter(pt => twrValue(pt, benchPortFilter) !== null);
+  if(!series.length) return;
+
   const labels = series.map(pt => pt.date);
-  const portRaw = series.map(seriesValue.bind(null));
-  const portBase = portRaw[0] || 1;
-  const datasets = [{
-    label: 'พอร์ต (' + (growthPortFilter==='all'?'All':growthPortFilter) + ')',
-    data: portRaw.map(v => round2((v/portBase - 1) * 100)),
-    borderColor:'#2a7a50', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2.5
-  }];
-  const benchColors = {SPY:'#2d6fa8', QQQ:'#c47a2a', SOXX:'#8a5fb8'};
-  ['SPY','QQQ','SOXX'].forEach(b=>{
-    if(!benchSelected[b]) return;
-    const raw = series.map(pt => (pt.benchmarks && pt.benchmarks[b]) || null);
-    const base = raw.find(v=>v) || 1;
-    datasets.push({
-      label: b,
-      data: raw.map(v => v ? round2((v/base - 1) * 100) : null),
-      borderColor: benchColors[b], backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:1.5, borderDash:[4,3]
-    });
-  });
+  const portIdx = series.map(pt => twrValue(pt, benchPortFilter));
+  const portBase = portIdx[0];
+  const portPct = portIdx.map(v => round2((v/portBase - 1) * 100));
+
+  const benchRaw = series.map(pt => (pt.benchmarks && pt.benchmarks[benchSelected]) || null);
+  const firstBenchIdx = benchRaw.findIndex(v=>v);
+  const benchBase = firstBenchIdx>=0 ? benchRaw[firstBenchIdx] : 1;
+  const benchPct = benchRaw.map(v => v ? round2((v/benchBase - 1) * 100) : null);
+
   destroyChart('c-benchmark');
   const ctx = document.getElementById('c-benchmark').getContext('2d');
   CHARTS['c-benchmark'] = new Chart(ctx, {
     type:'line',
-    data:{labels, datasets},
+    data:{labels, datasets:[
+      {label: 'พอร์ต (' + (benchPortFilter==='all'?'All':benchPortFilter) + ')', data: portPct, borderColor:'#2a7a50', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2.5},
+      {label: benchSelected, data: benchPct, borderColor:'#c47a2a', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:1.5, borderDash:[4,3]}
+    ]},
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:11}, color:'#3d5a47'}},
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(1)}%`}}},
-      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:10}, grid:{display:false}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(2)}%`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:10}, maxTicksLimit:8}, grid:{display:false}},
                y:{ticks:{color:'#6b8573', font:{size:11}, callback:v=>v+'%'}, grid:{color:'rgba(42,122,80,.06)'}}}}
   });
 }
