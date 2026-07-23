@@ -262,6 +262,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         <div class="tag-row" id="benchPeriodTags" style="margin-top:0"></div>
         <div class="chart-wrap" style="height:280px"><canvas id="c-benchmark"></canvas></div>
       </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <div class="card-sm">
+          <div class="card-title">Liquidity Layer</div>
+          <div class="card-sub">เงินสำรองฉุกเฉิน 3 ชั้น — เป้าหมาย Cash 50% / SGOV 30% / Fund 20%</div>
+          <div class="chart-wrap"><canvas id="c-liquidity"></canvas></div>
+          <div class="chart-legend" id="leg-liquidity"></div>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Investment Goals</div>
+          <div class="card-sub">ตั้งเป้าหมายการลงทุน (บันทึกในเบราว์เซอร์นี้)</div>
+          <div id="goalsList" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <select id="goalScope" style="width:auto;min-width:110px"></select>
+            <input type="number" id="goalAmount" placeholder="เป้าหมาย (THB)" style="width:130px">
+            <input type="number" id="goalYear" placeholder="ปี เช่น 2027" style="width:100px">
+            <button class="btn-add-goal" onclick="addGoal()" style="padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer">+ เพิ่มเป้าหมาย</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-sm" style="margin-top:14px">
+        <div class="card-title">ความคืบหน้ารายปี</div>
+        <div class="card-sub">คำนวณจากข้อมูลจริง — ครอบคลุมเฉพาะ Infinity/Nova/Spark/Victory (Gold/Crypto/Fund ยังไม่มีประวัติราคาย้อนหลัง)</div>
+        <div class="tag-row" id="yearlyStatsTags" style="margin:0 0 12px"></div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="tbl">
+            <thead><tr>
+              <th>ปี</th><th>ต้นทุนสะสม</th><th>สินทรัพย์ต้นปี</th><th>สินทรัพย์สิ้นปี</th><th>เปลี่ยนแปลง</th><th>TWR Return</th>
+            </tr></thead>
+            <tbody id="yearlyStatsBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
     <!-- ===== PAGE: DECISION ENGINE ===== -->
     <div class="page" id="page-decision">
@@ -316,7 +350,7 @@ function setCurrency(cur){
   document.getElementById('curUSD').classList.toggle('active', cur==='USD');
   document.getElementById('curTHB').classList.toggle('active', cur==='THB');
   if(RAW_DATA){ renderTracker(); renderDashboard(); renderDecision(); }
-  if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); }
+  if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderYearlyStats(); }
 }
 
 function fmt(n, cur){
@@ -334,7 +368,7 @@ function navigate(page){
   const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
-  if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); } }
+  if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); } }
   if(page==='decision' && RAW_DATA) renderDecision();
 }
 
@@ -451,6 +485,32 @@ function renderDashboard(){
   drawDonut('c-assettype', 'leg-assettype', (d.byAssetType||[]).filter(p=>p.valueUSD>0), key);
   drawBar('c-sector', bySec, key);
   renderPortfolioBreakdown(byPort, key);
+  renderLiquidity();
+  renderGoals();
+}
+
+function renderLiquidity(){
+  if(!RAW_DATA || !RAW_DATA.liquidity) return;
+  const liq = RAW_DATA.liquidity;
+  const items = liq.items.filter(i=>i.amountTHB>0 || i.targetPct>0);
+  const colors = {'Cash-Emergency':'#2a7a50','SGOV':'#2d6fa8','Mutual Funds':'#6b3fa8'};
+  destroyChart('c-liquidity');
+  const labels = items.map(i=>i.item);
+  const values = items.map(i=> currentCurrency==='USD' ? i.amountTHB/(RAW_DATA.dashboard.fxRateUSDTHB||33.8) : i.amountTHB);
+  const chartColors = items.map(i=>colors[i.item]||'#ccc');
+  const ctx = document.getElementById('c-liquidity').getContext('2d');
+  CHARTS['c-liquidity'] = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels, datasets:[{data:values, backgroundColor:chartColors, borderWidth:0, hoverOffset:6}]},
+    options:{responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>{
+        const it = items[c.dataIndex];
+        return ` ${it.item}: ${fmt(values[c.dataIndex])} (actual ${it.actualPct}% / target ${it.targetPct}%)`;
+      }}}}}
+  });
+  document.getElementById('leg-liquidity').innerHTML = items.map((it,i)=>
+    `<span class="legend-item"><span class="legend-dot" style="background:${chartColors[i]}"></span>${it.item}: ${it.actualPct}% (เป้า ${it.targetPct}%)</span>`
+  ).join('') + (liq.totalTHB<=0 ? '<div style="font-size:11px;color:var(--text3);margin-top:6px;width:100%">ยังไม่มียอดเงินในชั้นนี้ — กรอกยอดใน Liquidity tab เมื่อเริ่มเก็บจริง</div>' : '');
 }
 
 function renderPortfolioBreakdown(byPort, key){
@@ -543,10 +603,12 @@ async function loadGrowth(){
       renderGrowthControls();
       renderGrowthChart();
       renderBenchmarkChart();
+      renderYearlyStatsControls();
+      renderYearlyStats();
     }
   }catch(e){
     const cached = localStorage.getItem('ormmy_growth_cache');
-    if(cached){ GROWTH_DATA = JSON.parse(cached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); }
+    if(cached){ GROWTH_DATA = JSON.parse(cached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); }
   }
 }
 
@@ -680,6 +742,100 @@ function renderBenchmarkChart(){
   });
 }
 
+// ---------- Yearly Stats ----------
+let yearlyStatsScope = 'All';
+
+function renderYearlyStatsControls(){
+  if(!GROWTH_DATA || !GROWTH_DATA.yearlyStats) return;
+  const scopes = Object.keys(GROWTH_DATA.yearlyStats);
+  document.getElementById('yearlyStatsTags').innerHTML = scopes.map(s=>
+    `<button class="tag ${yearlyStatsScope===s?'active':''}" onclick="setYearlyStatsScope('${s}')">${s==='All'?'All Portfolios':s}</button>`
+  ).join('');
+}
+function setYearlyStatsScope(s){ yearlyStatsScope = s; renderYearlyStatsControls(); renderYearlyStats(); }
+
+function renderYearlyStats(){
+  if(!GROWTH_DATA || !GROWTH_DATA.yearlyStats) return;
+  const rows = GROWTH_DATA.yearlyStats[yearlyStatsScope] || [];
+  const tbody = document.getElementById('yearlyStatsBody');
+  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty">ยังไม่มีข้อมูล</div></td></tr>'; return; }
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+  tbody.innerHTML = rows.map(r=>{
+    const chCls = r.changePct>=0 ? 'pos' : 'neg';
+    return `<tr>
+      <td><span style="font-weight:600">${r.year}</span></td>
+      <td><span class="mono">${fmt(cv(r.costUSD))}</span></td>
+      <td><span class="mono">${fmt(cv(r.assetStartUSD))}</span></td>
+      <td><span class="mono">${fmt(cv(r.assetEndUSD))}</span></td>
+      <td class="${chCls}">${r.changePct!==null ? (r.changePct>=0?'+':'')+r.changePct.toFixed(1)+'%' : '—'}</td>
+      <td class="${chCls}">${r.twrReturnPct!==null ? (r.twrReturnPct>=0?'+':'')+r.twrReturnPct.toFixed(1)+'%' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---------- Investment Goals (localStorage) ----------
+const GOALS_KEY = 'ormmy_goals';
+
+function getGoals(){ try{ return JSON.parse(localStorage.getItem(GOALS_KEY)) || []; }catch(e){ return []; } }
+function saveGoals(g){ localStorage.setItem(GOALS_KEY, JSON.stringify(g)); }
+
+function populateGoalScopeOptions(){
+  const sel = document.getElementById('goalScope');
+  if(!sel || !RAW_DATA) return;
+  const ports = [...new Set((RAW_DATA.holdings||[]).map(h=>h.portfolio))].filter(p=>p!=='Legacy');
+  sel.innerHTML = '<option value="All">All Portfolios (รวม)</option>' + ports.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+
+function addGoal(){
+  const scope = document.getElementById('goalScope').value;
+  const amount = Number(document.getElementById('goalAmount').value);
+  const year = Number(document.getElementById('goalYear').value);
+  if(!amount || !year){ alert('กรอกเป้าหมาย (บาท) และปีให้ครบ'); return; }
+  const goals = getGoals();
+  goals.push({ id: Date.now(), scope, amountTHB: amount, year });
+  saveGoals(goals);
+  document.getElementById('goalAmount').value = '';
+  document.getElementById('goalYear').value = '';
+  renderGoals();
+}
+function removeGoal(id){
+  saveGoals(getGoals().filter(g=>g.id!==id));
+  renderGoals();
+}
+
+function renderGoals(){
+  populateGoalScopeOptions();
+  const container = document.getElementById('goalsList');
+  if(!container) return;
+  const goals = getGoals();
+  if(!goals.length){ container.innerHTML = '<div style="font-size:12px;color:var(--text3)">ยังไม่มีเป้าหมาย — เพิ่มด้านล่างได้เลย</div>'; return; }
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  container.innerHTML = goals.map(g=>{
+    let currentTHB = 0;
+    if(RAW_DATA && RAW_DATA.dashboard){
+      if(g.scope==='All') currentTHB = RAW_DATA.dashboard.totalMarketValueTHB || 0;
+      else {
+        const p = (RAW_DATA.dashboard.byPortfolio||[]).find(x=>x.name===g.scope);
+        currentTHB = p ? p.valueTHB : 0;
+      }
+    }
+    const pct = Math.min(100, Math.round((currentTHB/g.amountTHB)*100));
+    const thisYear = new Date().getFullYear();
+    const yearsLeft = g.year - thisYear;
+    return `<div style="margin-bottom:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r-sm)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">${g.scope==='All'?'ทุกพอร์ต':g.scope} → ฿${g.amountTHB.toLocaleString()} ภายในปี ${g.year}</span>
+        <span style="font-size:11px;color:var(--text3);cursor:pointer" onclick="removeGoal(${g.id})">ลบ ✕</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px">
+        <div style="height:100%;width:${pct}%;background:${pct>=100?'var(--emerald)':'var(--green)'};border-radius:3px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3)">${pct}% (฿${Math.round(currentTHB).toLocaleString()}) ${yearsLeft>0?`· เหลืออีก ${yearsLeft} ปี`:yearsLeft===0?'· ปีนี้':'· เลยกำหนดแล้ว'}</div>
+    </div>`;
+  }).join('');
+}
+
 
 function filterDecision(f, btn){
   decisionFilter = f;
@@ -758,7 +914,7 @@ function renderDecision(){
     try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); }catch(e){}
   }
   if(growthCached){
-    try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); }catch(e){}
+    try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); }catch(e){}
   }
   loadData();
 })();
