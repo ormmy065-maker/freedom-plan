@@ -353,24 +353,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       <div class="tag-row" id="toolsSubnav">
         <button class="tag active" onclick="setToolsView('allocation', this)">Allocation Planner</button>
         <button class="tag" onclick="setToolsView('entryexit', this)">Entry &amp; Exit Lab</button>
-        <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Scenario Simulator</button>
+        <button class="tag" onclick="setToolsView('scenario', this)">Scenario Simulator</button>
         <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Position Sizer</button>
       </div>
 
       <div id="toolAllocation">
         <div class="card-sm" style="margin-bottom:14px">
           <div class="card-title">Allocation Planner</div>
-          <div class="card-sub">เช็คว่าแต่ละหุ้นถือมากเกินไปหรือน้อยเกินไปเมื่อเทียบกับ Target — แก้ช่อง "ปรับเป็น %" เพื่อดูว่าต้องเติมเงินเท่าไหร่ถึงจะได้สัดส่วนที่ต้องการ (ไม่จำเป็นต้องเต็ม Target ก็ได้)</div>
+          <div class="card-sub">เช็คว่าแต่ละหุ้นถือมากเกินไปหรือน้อยเกินไปเมื่อเทียบกับ Target ที่ตั้งไว้</div>
           <div class="tag-row" id="allocPortTags" style="margin-bottom:0"></div>
         </div>
-        <div class="card" style="padding:0;overflow:hidden">
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
           <table class="tbl">
             <thead><tr>
               <th>Ticker</th><th>Portfolio</th><th>Current %</th><th>Target %</th><th>Gap</th><th>สถานะ</th>
-              <th>ปรับเป็น %</th><th>ราคาปัจจุบัน</th><th>ต้องเติมเงิน</th><th>≈ จำนวนหุ้น</th>
             </tr></thead>
             <tbody id="allocBody"></tbody>
           </table>
+        </div>
+
+        <div class="card-sm">
+          <div class="card-title">🧮 Rebalance Calculator</div>
+          <div class="card-sub">เลือกโหมด: ปรับดู % เป้าหมาย หรือ ใส่จำนวนเงินที่จะเติม — คำนวณจากราคาจริงปัจจุบัน</div>
+          <div class="tag-row" id="rebalModeTags" style="margin-bottom:12px">
+            <button class="tag active" onclick="setRebalMode('pct', this)">ปรับดู % เป้าหมาย</button>
+            <button class="tag" onclick="setRebalMode('amount', this)">ใส่จำนวนเงินที่จะเติม</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="rebalTicker" onchange="calcRebalance()" style="width:130px"></select></div>
+            <div id="rebalInputWrap"><label style="font-size:11px;color:var(--text3)" id="rebalInputLabel">Target %</label><br><input type="number" id="rebalInput" step="0.1" oninput="calcRebalance()" style="width:130px"></div>
+          </div>
+          <div id="rebalResult" style="margin-top:14px"></div>
         </div>
       </div>
 
@@ -391,6 +404,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           <div id="eeCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
         </div>
         <div id="eeResults"></div>
+      </div>
+
+      <div id="toolScenario" style="display:none">
+        <div class="card-sm" style="margin-bottom:14px">
+          <div class="card-title">Scenario Simulator</div>
+          <div class="card-sub">จำลองว่าถ้าหุ้นร่วงกี่ % พอร์ตจะเสียหายเท่าไหร่ และต้องใช้เวลาฟื้นแค่ไหน</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
+            <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="scTicker" onchange="onScTickerChange()" style="width:140px"></select></div>
+            <div><label style="font-size:11px;color:var(--text3)">ราคาปัจจุบัน</label><br><input type="number" id="scPrice" oninput="calcScenario()" style="width:120px"></div>
+            <div><label style="font-size:11px;color:var(--text3)">มูลค่า Position ($)</label><br><input type="number" id="scValue" oninput="calcScenario()" style="width:130px"></div>
+          </div>
+          <div id="scCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+        </div>
+        <div id="scResults"></div>
       </div>
     </div>
   </div>
@@ -961,14 +988,17 @@ function renderGoals(){
 
 // ---------- Tools Lab: Allocation Planner ----------
 let allocPortFilter = 'all';
-const allocCustomTargets = {}; // ticker -> custom target % override
+let rebalMode = 'pct';
 
 function setToolsView(view, btn){
   document.querySelectorAll('#toolsSubnav .tag').forEach(t=>t.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.getElementById('toolAllocation').style.display = view==='allocation' ? '' : 'none';
   document.getElementById('toolEntryExit').style.display = view==='entryexit' ? '' : 'none';
+  document.getElementById('toolScenario').style.display = view==='scenario' ? '' : 'none';
   if(view==='entryexit') initEntryExitLab();
+  if(view==='allocation') initRebalCalculator();
+  if(view==='scenario') initScenarioSimulator();
 }
 
 function renderAllocationPlanner(){
@@ -987,14 +1017,13 @@ function renderAllocationPlanner(){
   const rows = filtered.map(h=>{
     const currentPct = totalEquity>0 ? round2((h.marketValueUSD/totalEquity)*100) : 0;
     const gap = round2(currentPct - h.targetPct);
-    return {ticker:h.ticker, portfolio:h.portfolio, currentPct, targetPct:h.targetPct, gap, price:h.price, marketValueUSD:h.marketValueUSD};
+    return {ticker:h.ticker, portfolio:h.portfolio, currentPct, targetPct:h.targetPct, gap};
   }).sort((a,b)=>b.currentPct-a.currentPct);
 
   const tbody = document.getElementById('allocBody');
   if(!tbody) return;
-  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="10"><div class="empty">ไม่มีข้อมูล</div></td></tr>'; return; }
+  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty">ไม่มีข้อมูล</div></td></tr>'; return; }
   const badge = PORTFOLIO_BADGE;
-  const fx = RAW_DATA.dashboard.fxRateUSDTHB || 33.8;
 
   tbody.innerHTML = rows.map(r=>{
     let statusHtml;
@@ -1003,16 +1032,6 @@ function renderAllocationPlanner(){
     else if(r.gap < -1.5){ statusHtml = `<span class="alloc-under">🔻 Underweight</span>`; }
     else { statusHtml = `<span class="alloc-ontarget">✓ On Target</span>`; }
     const gapCls = r.gap>0.05?'neg':r.gap<-0.05?'pos':'neutral';
-    const customPct = allocCustomTargets[r.ticker] !== undefined ? allocCustomTargets[r.ticker] : r.targetPct;
-
-    // x = (p*T - V) / (1-p) — new capital needed for this ticker to reach p% of resulting total
-    const p = customPct/100;
-    let buyUSD = null;
-    if(p < 1 && p >= 0){ buyUSD = (p*totalEquity - r.marketValueUSD) / (1-p); }
-    const buyDisplay = currentCurrency==='USD' ? buyUSD : (buyUSD!==null ? buyUSD*fx : null);
-    const priceDisplay = currentCurrency==='USD' ? r.price : r.price*fx;
-    const shares = (buyUSD!==null && r.price>0) ? (buyUSD/r.price) : null;
-
     return `<tr>
       <td><span style="font-weight:500">${r.ticker}</span></td>
       <td><span class="badge ${badge[r.portfolio]||'badge-legacy'}">${r.portfolio}</span></td>
@@ -1020,17 +1039,131 @@ function renderAllocationPlanner(){
       <td><span class="mono">${r.targetPct>0?r.targetPct.toFixed(2)+'%':'—'}</span></td>
       <td class="${gapCls}"><span class="mono">${r.gap>=0?'+':''}${r.gap.toFixed(2)}%</span></td>
       <td>${statusHtml}</td>
-      <td><input type="number" step="0.1" value="${customPct}" style="width:70px;padding:5px 7px;font-size:12px" onchange="setAllocCustomTarget('${r.ticker}', this.value)"></td>
-      <td><span class="mono text-xs">${fmt(priceDisplay)}</span></td>
-      <td>${buyUSD===null ? '—' : buyUSD<=0 ? '<span class="pos">เกินแล้ว</span>' : `<span class="neg mono">${fmt(buyDisplay)}</span>`}</td>
-      <td>${shares!==null && shares>0 ? '<span class="mono text-xs">≈'+shares.toFixed(2)+' หุ้น</span>' : '—'}</td>
     </tr>`;
   }).join('');
+  initRebalCalculator();
 }
 function setAllocFilter(p){ allocPortFilter = p; renderAllocationPlanner(); }
-function setAllocCustomTarget(ticker, val){
-  allocCustomTargets[ticker] = Number(val) || 0;
-  renderAllocationPlanner();
+
+// ---------- Rebalance Calculator (2 modes) ----------
+function setRebalMode(mode, btn){
+  rebalMode = mode;
+  document.querySelectorAll('#rebalModeTags .tag').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('rebalInputLabel').textContent = mode==='pct' ? 'Target %' : `จำนวนเงินที่จะเติม (${currentCurrency})`;
+  document.getElementById('rebalInput').value = '';
+  calcRebalance();
+}
+
+function initRebalCalculator(){
+  const sel = document.getElementById('rebalTicker');
+  if(sel.options.length) return;
+  const holdings = (RAW_DATA.holdings||[]).filter(h=>['Infinity','Nova','Spark','Victory'].includes(h.portfolio));
+  const tickers = [...new Set(holdings.map(h=>h.ticker))].sort();
+  sel.innerHTML = tickers.map(t=>`<option value="${t}">${t}</option>`).join('');
+  document.getElementById('rebalInputLabel').textContent = 'Target %';
+  calcRebalance();
+}
+
+function calcRebalance(){
+  const ticker = document.getElementById('rebalTicker').value;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const resultEl = document.getElementById('rebalResult');
+  if(!h){ resultEl.innerHTML = ''; return; }
+
+  const holdings = (RAW_DATA.holdings||[]).filter(x => x.marketValueUSD>0 && ['Infinity','Nova','Spark','Victory'].includes(x.portfolio));
+  const totalEquity = holdings.reduce((s,x)=>s+x.marketValueUSD,0);
+  const fx = RAW_DATA.dashboard.fxRateUSDTHB || 33.8;
+  const currentPct = totalEquity>0 ? (h.marketValueUSD/totalEquity)*100 : 0;
+  const inputVal = Number(document.getElementById('rebalInput').value);
+
+  let targetPct, buyUSD;
+  if(rebalMode==='pct'){
+    if(!inputVal && inputVal!==0){ resultEl.innerHTML = `<div style="font-size:12px;color:var(--text3)">ตอนนี้ ${ticker} = ${currentPct.toFixed(2)}% ของพอร์ตหุ้น (Target ตั้งไว้ ${h.targetPct.toFixed(2)}%) — กรอก Target % ที่อยากลองดู</div>`; return; }
+    targetPct = inputVal;
+    const p = targetPct/100;
+    buyUSD = (p<1 && p>=0) ? (p*totalEquity - h.marketValueUSD) / (1-p) : null;
+  } else {
+    if(!inputVal){ resultEl.innerHTML = `<div style="font-size:12px;color:var(--text3)">ตอนนี้ ${ticker} = ${currentPct.toFixed(2)}% ของพอร์ตหุ้น — กรอกจำนวนเงินที่จะเติม</div>`; return; }
+    buyUSD = currentCurrency==='USD' ? inputVal : inputVal/fx;
+    targetPct = ((h.marketValueUSD + buyUSD) / (totalEquity + buyUSD)) * 100;
+  }
+
+  const buyDisplay = currentCurrency==='USD' ? buyUSD : buyUSD*fx;
+  const shares = h.price>0 ? buyUSD/h.price : 0;
+  const priceDisplay = currentCurrency==='USD' ? h.price : h.price*fx;
+
+  if(buyUSD===null || buyUSD<=0){
+    resultEl.innerHTML = `<div class="banner banner-stale" style="margin:0">${ticker} มีสัดส่วนเกิน ${targetPct.toFixed(2)}% อยู่แล้ว (ปัจจุบัน ${currentPct.toFixed(2)}%) — ไม่ต้องเติมเงินเพิ่ม</div>`;
+    return;
+  }
+
+  resultEl.innerHTML = `
+    <div class="grid-4">
+      <div class="kpi"><div class="kpi-label">ปัจจุบัน</div><div class="kpi-value">${currentPct.toFixed(2)}%</div></div>
+      <div class="kpi"><div class="kpi-label">เป้าที่จะไปถึง</div><div class="kpi-value pos">${targetPct.toFixed(2)}%</div></div>
+      <div class="kpi"><div class="kpi-label">ราคาปัจจุบัน</div><div class="kpi-value">${fmt(priceDisplay)}</div></div>
+      <div class="kpi"><div class="kpi-label">ต้องเติมเงิน</div><div class="kpi-value" style="color:var(--green)">${fmt(buyDisplay)}</div><div class="kpi-change neutral">≈ ${shares.toFixed(3)} หุ้น</div></div>
+    </div>`;
+}
+
+// ---------- Scenario Simulator ----------
+function initScenarioSimulator(){
+  const sel = document.getElementById('scTicker');
+  if(sel.options.length) return;
+  const holdings = (RAW_DATA.holdings||[]).filter(h=>h.marketValueUSD>0);
+  const tickers = [...new Set(holdings.map(h=>h.ticker))].sort();
+  sel.innerHTML = tickers.map(t=>`<option value="${t}">${t}</option>`).join('');
+  onScTickerChange();
+}
+
+function onScTickerChange(){
+  const ticker = document.getElementById('scTicker').value;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  document.getElementById('scPrice').value = h ? h.price : '';
+  document.getElementById('scValue').value = h ? Math.round(h.marketValueUSD) : '';
+  document.getElementById('scCurrentInfo').textContent = h ? `ถืออยู่ ${h.units.toFixed(4)} หุ้น · มูลค่าปัจจุบัน $${h.marketValueUSD.toFixed(2)}` : '';
+  calcScenario();
+}
+
+const DRAWDOWN_LEVELS = [5,10,20,30,50];
+
+function calcScenario(){
+  const price = Number(document.getElementById('scPrice').value);
+  const value = Number(document.getElementById('scValue').value);
+  const resultsEl = document.getElementById('scResults');
+  if(!price || !value){ resultsEl.innerHTML = ''; return; }
+  const fx = RAW_DATA.dashboard.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+
+  const rows = DRAWDOWN_LEVELS.map(pct=>{
+    const newPrice = price*(1-pct/100);
+    const newValue = value*(1-pct/100);
+    const loss = value - newValue;
+    const recoveryPct = (pct/(100-pct))*100;
+    return {pct, newPrice, newValue, loss, recoveryPct};
+  });
+
+  resultsEl.innerHTML = `
+    <div class="card-sm" style="margin-bottom:14px">
+      <div class="card-title">Drawdown Table</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="tbl">
+          <thead><tr><th>ร่วง</th><th>ราคาใหม่</th><th>มูลค่าใหม่</th><th>เสียไป</th><th>ต้องขึ้นกี่ % ถึงคืนทุน</th></tr></thead>
+          <tbody>
+            ${rows.map(r=>`<tr>
+              <td><span style="font-weight:600;color:var(--red)">-${r.pct}%</span></td>
+              <td><span class="mono">${fmt(cv(r.newPrice))}</span></td>
+              <td><span class="mono">${fmt(cv(r.newValue))}</span></td>
+              <td class="neg"><span class="mono">-${fmt(cv(r.loss))}</span></td>
+              <td><span class="mono pos">+${r.recoveryPct.toFixed(1)}%</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3)">💡 ตัวอย่าง: ถ้าราคาลง -50% ต้องขึ้น +100% ถึงจะคืนทุน — ยิ่งลงลึก ยิ่งต้องขึ้นแรงกว่าเดิมมากเพื่อกลับมาเท่าทุน ใช้เช็คก่อนซื้อหุ้น risk สูง</div>
+  `;
 }
 
 // ---------- Tools Lab: Entry & Exit Lab ----------
