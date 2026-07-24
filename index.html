@@ -113,6 +113,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 @keyframes goalGlow{0%,100%{box-shadow:0 0 0 0 rgba(224,176,0,0)}50%{box-shadow:0 0 10px 1px rgba(224,176,0,.35)}}
 .goal-reorder{display:flex;flex-direction:column;gap:1px;cursor:pointer;color:var(--text4);font-size:9px;line-height:1}
 .goal-reorder span:hover{color:var(--green)}
+.alloc-over{background:#fde8e8;color:#c44b3a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.alloc-under{background:#fdf0e0;color:#c47a2a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.alloc-ontarget{background:var(--green-light);color:var(--green2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .action-buy{background:#e8f5ee;color:#1f5e3c;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
 .action-hold{background:#fff8e0;color:#8a6800;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
 .action-stop{background:#fde8e8;color:#c44b3a;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
@@ -152,7 +155,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <button class="nav-item active" onclick="navigate('tracker')" id="nav-tracker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio Tracker</button>
     <button class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard</button>
     <button class="nav-item" onclick="navigate('decision')" id="nav-decision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Decision Engine</button>
-    <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tools Lab<span class="nav-badge">Phase 5</span></button>
+    <button class="nav-item" onclick="navigate('tools')" id="nav-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tools Lab</button>
   </nav>
   <div class="sidebar-bottom">
     <div class="status-row"><div class="status-dot" id="connDot"></div><span id="connText">กำลังเชื่อมต่อ...</span></div>
@@ -215,7 +218,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       <div class="section-sub">สัดส่วนพอร์ตแยกตาม Portfolio / Sector / Asset Type — คำนวณจากข้อมูลจริง</div>
 
       <div class="dash-section">
-        <div class="dash-section-header">📊 ภาพรวม</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg> ภาพรวม</div>
         <div class="grid-4">
           <div class="kpi"><div class="kpi-label">Total Portfolio Value</div><div class="kpi-value" id="dTotal">—</div></div>
           <div class="kpi"><div class="kpi-label">USD/THB Rate</div><div class="kpi-value" id="dFx">—</div></div>
@@ -225,7 +228,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-header">🥧 สัดส่วนพอร์ต</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg> สัดส่วนพอร์ต</div>
         <div class="grid-2">
           <div class="card-sm">
             <div class="card-title">Portfolio Structure</div>
@@ -246,7 +249,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-header">🏭 Sector Exposure</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Sector Exposure</div>
         <div class="card-sm">
           <div class="card-title">ความเข้มข้นตาม Sector</div>
           <div class="card-sub">เลือกพอร์ตเพื่อดูเฉพาะ sector ของพอร์ตนั้น</div>
@@ -256,7 +259,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-header">📈 Portfolio Growth</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> Portfolio Growth</div>
         <div class="card-sm">
           <div class="card-sub" id="growthNote">ผลตอบแทนแบบ Time-Weighted Return (ไม่รวมผลของเงินต้นใหม่ที่เติมเข้า)</div>
           <div class="tag-row" id="growthPortTags" style="margin-bottom:8px"></div>
@@ -267,7 +270,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-header">⚖️ พอร์ตเทียบกับ Benchmark</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 6 0z"/><path d="M19 8l-3 6a4 4 0 0 0 6 0z"/><path d="M5 8h14M8 21h8"/></svg> พอร์ตเทียบกับ Benchmark</div>
         <div class="card-sm">
           <div class="card-sub">Time-Weighted Return เทียบกับดัชนี — เลือกพอร์ตและดัชนีที่จะเทียบได้อิสระ</div>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px">
@@ -286,7 +289,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-header">🛡️ Liquidity Layer &amp; 🎯 Investment Goals</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Liquidity Layer &amp; <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="var(--green)"/></svg> Investment Goals</div>
         <div class="grid-2">
           <div class="card-sm">
             <div class="card-title">Liquidity Layer</div>
@@ -308,7 +311,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
       </div>
       <div class="dash-section">
-        <div class="dash-section-header">📅 ความคืบหน้ารายปี</div>
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ความคืบหน้ารายปี</div>
         <div class="card-sm">
           <div class="card-sub">คำนวณจากข้อมูลจริง — ครอบคลุมเฉพาะ Infinity/Nova/Spark/Victory (Gold/Crypto/Fund ยังไม่มีประวัติราคาย้อนหลัง)</div>
           <div class="tag-row" id="yearlyStatsTags" style="margin:0 0 12px"></div>
@@ -341,6 +344,35 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
       <div id="decisionCards"></div>
     </div>
+
+    <!-- ===== PAGE: TOOLS LAB ===== -->
+    <div class="page" id="page-tools">
+      <div class="section-title">Tools Lab</div>
+      <div class="section-sub">เครื่องมือช่วย monitor และไกด์การเข้าซื้อ/ปรับสัดส่วนหุ้นในพอร์ต</div>
+
+      <div class="tag-row" id="toolsSubnav">
+        <button class="tag active" onclick="setToolsView('allocation')">Allocation Planner</button>
+        <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Entry &amp; Exit Lab</button>
+        <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Scenario Simulator</button>
+        <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Position Sizer</button>
+      </div>
+
+      <div id="toolAllocation">
+        <div class="card-sm" style="margin-bottom:14px">
+          <div class="card-title">Allocation Planner</div>
+          <div class="card-sub">เช็คว่าแต่ละหุ้นถือมากเกินไปหรือน้อยเกินไปเมื่อเทียบกับ Target ที่ตั้งไว้ (Target% อิงจากมูลค่าหุ้นรวมทั้งหมด — Infinity+Nova+Spark+Victory)</div>
+          <div class="tag-row" id="allocPortTags" style="margin-bottom:0"></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="tbl">
+            <thead><tr>
+              <th>Ticker</th><th>Portfolio</th><th>Current %</th><th>Target %</th><th>Gap</th><th>สถานะ</th>
+            </tr></thead>
+            <tbody id="allocBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -358,8 +390,8 @@ const PORTFOLIO_BADGE = {
 };
 const PALETTE = ['#2a7a50','#e07830','#c47a2a','#6b3fa8','#2d6fa8','#8a5fb8','#d04a4a','#28a8a8','#a8a828','#6aaa85'];
 const PORTFOLIO_COLORS = {
-  Infinity:'#2a7a50', Nova:'#2d6fa8', Victory:'#c2447a', Spark:'#c44b3a',
-  Gold:'#c9971e', Fund:'#6b3fa8', Crypto:'#d4b106', Legacy:'#999999', Unknown:'#999999'
+  Infinity:'#2E9E64', Nova:'#3D8BD4', Victory:'#D6598F', Spark:'#E2574C',
+  Gold:'#C89B3C', Fund:'#8E5FC9', Crypto:'#F0C808', Legacy:'#A0A0A0', Unknown:'#A0A0A0'
 };
 
 function getUrl(){ return localStorage.getItem(STORAGE_KEY) || ''; }
@@ -375,7 +407,7 @@ function setCurrency(cur){
   currentCurrency = cur;
   document.getElementById('curUSD').classList.toggle('active', cur==='USD');
   document.getElementById('curTHB').classList.toggle('active', cur==='THB');
-  if(RAW_DATA){ renderTracker(); renderDashboard(); renderDecision(); }
+  if(RAW_DATA){ renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner(); }
   if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderYearlyStats(); }
 }
 
@@ -391,11 +423,12 @@ function navigate(page){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.getElementById('nav-'+page).classList.add('active');
-  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status']};
+  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status'], tools:['Tools Lab','เครื่องมือช่วย monitor และไกด์การลงทุน']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
   if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); } }
   if(page==='decision' && RAW_DATA) renderDecision();
+  if(page==='tools' && RAW_DATA) renderAllocationPlanner();
 }
 
 async function loadData(){
@@ -414,7 +447,7 @@ async function loadData(){
     if(data.error) throw new Error(data.error);
     RAW_DATA = data;
     localStorage.setItem('ormmy_cache', JSON.stringify({data, time: new Date().toISOString()}));
-    renderTracker(); renderDashboard(); renderDecision();
+    renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner();
     loadGrowth();
     document.getElementById('connText').textContent = 'เชื่อมต่อสำเร็จ';
     document.getElementById('connDot').className = 'status-dot';
@@ -432,7 +465,7 @@ async function loadData(){
       RAW_DATA = parsed.data;
       document.getElementById('staleBanner').style.display = 'flex';
       document.getElementById('staleTime').textContent = 'โหลดล่าสุดเมื่อ ' + new Date(parsed.time).toLocaleString('th-TH');
-      renderTracker(); renderDashboard(); renderDecision();
+      renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner();
       loadGrowth();
     } else {
       document.getElementById('loadingState').style.display = 'none';
@@ -893,7 +926,7 @@ function renderGoals(){
             <span onclick="moveGoal(${g.id},-1)">▲</span>
             <span onclick="moveGoal(${g.id},1)">▼</span>
           </div>
-          <span style="font-size:12px;font-weight:600">${done?'🎉 ':nearDone?'🔥 ':''}${g.scope==='All'?'ทุกพอร์ต':g.scope} → ฿${g.amountTHB.toLocaleString()} ภายในปี ${g.year}</span>
+          <span style="font-size:12px;font-weight:600">${done?'★ ':nearDone?'⚡ ':''}${g.scope==='All'?'ทุกพอร์ต':g.scope} → ฿${g.amountTHB.toLocaleString()} ภายในปี ${g.year}</span>
         </div>
         <span style="font-size:11px;color:var(--text3);cursor:pointer" onclick="removeGoal(${g.id})">ลบ ✕</span>
       </div>
@@ -905,6 +938,55 @@ function renderGoals(){
   }).join('');
 }
 
+
+// ---------- Tools Lab: Allocation Planner ----------
+let allocPortFilter = 'all';
+
+function setToolsView(view){
+  // only 'allocation' implemented so far; reserved for future tools
+}
+
+function renderAllocationPlanner(){
+  if(!RAW_DATA) return;
+  const holdings = (RAW_DATA.holdings||[]).filter(h => h.marketValueUSD>0 && ['Infinity','Nova','Spark','Victory'].includes(h.portfolio));
+  const totalEquity = holdings.reduce((s,h)=>s+h.marketValueUSD,0);
+  const ports = [...new Set(holdings.map(h=>h.portfolio))];
+
+  const tagsEl = document.getElementById('allocPortTags');
+  if(tagsEl){
+    tagsEl.innerHTML = `<button class="tag ${allocPortFilter==='all'?'active':''}" onclick="setAllocFilter('all')">All</button>` +
+      ports.map(p=>`<button class="tag ${allocPortFilter===p?'active':''}" onclick="setAllocFilter('${p}')">${p}</button>`).join('');
+  }
+
+  const filtered = allocPortFilter==='all' ? holdings : holdings.filter(h=>h.portfolio===allocPortFilter);
+  const rows = filtered.map(h=>{
+    const currentPct = totalEquity>0 ? round2((h.marketValueUSD/totalEquity)*100) : 0;
+    const gap = round2(currentPct - h.targetPct);
+    return {ticker:h.ticker, portfolio:h.portfolio, currentPct, targetPct:h.targetPct, gap};
+  }).sort((a,b)=>b.currentPct-a.currentPct);
+
+  const tbody = document.getElementById('allocBody');
+  if(!tbody) return;
+  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty">ไม่มีข้อมูล</div></td></tr>'; return; }
+  const badge = PORTFOLIO_BADGE;
+  tbody.innerHTML = rows.map(r=>{
+    let statusHtml;
+    if(r.targetPct<=0){ statusHtml = '<span class="alloc-ontarget">ไม่มี Target</span>'; }
+    else if(r.gap > 1.5){ statusHtml = `<span class="alloc-over">🔺 Overweight</span>`; }
+    else if(r.gap < -1.5){ statusHtml = `<span class="alloc-under">🔻 Underweight</span>`; }
+    else { statusHtml = `<span class="alloc-ontarget">✓ On Target</span>`; }
+    const gapCls = r.gap>0.05?'neg':r.gap<-0.05?'pos':'neutral';
+    return `<tr>
+      <td><span style="font-weight:500">${r.ticker}</span></td>
+      <td><span class="badge ${badge[r.portfolio]||'badge-legacy'}">${r.portfolio}</span></td>
+      <td><span class="mono">${r.currentPct.toFixed(2)}%</span></td>
+      <td><span class="mono">${r.targetPct>0?r.targetPct.toFixed(2)+'%':'—'}</span></td>
+      <td class="${gapCls}"><span class="mono">${r.gap>=0?'+':''}${r.gap.toFixed(2)}%</span></td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
+}
+function setAllocFilter(p){ allocPortFilter = p; renderAllocationPlanner(); }
 
 function filterDecision(f, btn){
   decisionFilter = f;
@@ -984,7 +1066,7 @@ function renderDecision(){
   const cached = localStorage.getItem('ormmy_cache');
   const growthCached = localStorage.getItem('ormmy_growth_cache');
   if(cached){
-    try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); }catch(e){}
+    try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner(); }catch(e){}
   }
   if(growthCached){
     try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); }catch(e){}
