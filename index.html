@@ -354,7 +354,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         <button class="tag active" onclick="setToolsView('allocation', this)">Allocation Planner</button>
         <button class="tag" onclick="setToolsView('entryexit', this)">Entry &amp; Exit Lab</button>
         <button class="tag" onclick="setToolsView('scenario', this)">Scenario Simulator</button>
-        <button class="tag" disabled title="เร็วๆ นี้" style="opacity:.4">Position Sizer</button>
+        <button class="tag" onclick="setToolsView('sizer', this)">Position Sizer</button>
       </div>
 
       <div id="toolAllocation">
@@ -373,7 +373,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
 
         <div class="card-sm">
-          <div class="card-title">🧮 Rebalance Calculator</div>
+          <div class="card-title" style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text1)" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/></svg> Rebalance Calculator</div>
           <div class="card-sub">เลือกโหมด: ปรับดู % เป้าหมาย หรือ ใส่จำนวนเงินที่จะเติม — คำนวณจากราคาจริงปัจจุบัน</div>
           <div class="tag-row" id="rebalModeTags" style="margin-bottom:12px">
             <button class="tag active" onclick="setRebalMode('pct', this)">ปรับดู % เป้าหมาย</button>
@@ -418,6 +418,51 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           <div id="scCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
         </div>
         <div id="scResults"></div>
+
+        <div class="card-sm" style="margin-top:14px">
+          <div class="card-title">Portfolio Damage Map</div>
+          <div class="card-sub">Portfolio Damage = น้ำหนักที่ถือจริง (% ของพอร์ต) × Asset Drawdown — จากหนังสือ Risk Management Playbook</div>
+          <div id="scDamageMap"></div>
+        </div>
+
+        <div class="card-sm" style="margin-top:14px">
+          <div class="card-title">Full Portfolio Stress Test</div>
+          <div class="card-sub">ใส่ shock % ให้แต่ละพอร์ต แล้วดูว่าพอร์ตรวมเสียหายเท่าไหร่ (Static instantaneous shock — ยังไม่รวม rebalancing/tax)</div>
+          <div id="stressInputs" style="margin-bottom:12px"></div>
+          <button onclick="calcStressTest()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;margin-bottom:12px">คำนวณ Stress Test</button>
+          <div id="stressResult"></div>
+        </div>
+      </div>
+
+      <div id="toolSizer" style="display:none">
+        <div class="card-sm" style="margin-bottom:14px">
+          <div class="card-title">Position Sizer</div>
+          <div class="card-sub">Risk-Budget Position Sizing — คำนวณย้อนกลับจากความเสียหายที่ยอมรับได้ (จากหนังสือ Risk Management Playbook Part 3)</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
+            <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="psTicker" onchange="onPsTickerChange()" style="width:140px"></select></div>
+            <div><label style="font-size:11px;color:var(--text3)">ยอมให้พอร์ตเสียหายสูงสุด (%)</label><br><input type="number" id="psMaxLoss" value="1.5" step="0.1" oninput="calcPositionSizer()" style="width:130px"></div>
+            <div><label style="font-size:11px;color:var(--text3)">Estimated Stress Drawdown (%)</label><br><input type="number" id="psStressDD" value="40" step="1" oninput="calcPositionSizer()" style="width:130px"></div>
+          </div>
+          <div class="tag-row" id="psStressPreset" style="margin-top:10px">
+            <button class="tag" onclick="setPsStress(25, this)">-25%</button>
+            <button class="tag active" onclick="setPsStress(40, this)">-40%</button>
+            <button class="tag" onclick="setPsStress(60, this)">-60%</button>
+            <button class="tag" onclick="setPsStress(100, this)">-100% (Permanent loss)</button>
+          </div>
+          <div id="psCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+        </div>
+        <div id="psResults"></div>
+
+        <div class="card-sm" style="margin-top:14px">
+          <div class="card-title">ตารางอ้างอิง: Asset Archetype Position Size</div>
+          <div class="card-sub">ช่วงขนาดที่แนะนำตามประเภทสินทรัพย์ (Illustrative — ปรับตามพอร์ตและเป้าหมายของแต่ละคน)</div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="tbl">
+              <thead><tr><th>ประเภทสินทรัพย์</th><th>ไม้แรก</th><th>เต็มสูงสุด</th><th>ต้องเห็นอะไรก่อนเพิ่ม</th></tr></thead>
+              <tbody id="psArchetypeTable"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -996,9 +1041,11 @@ function setToolsView(view, btn){
   document.getElementById('toolAllocation').style.display = view==='allocation' ? '' : 'none';
   document.getElementById('toolEntryExit').style.display = view==='entryexit' ? '' : 'none';
   document.getElementById('toolScenario').style.display = view==='scenario' ? '' : 'none';
+  document.getElementById('toolSizer').style.display = view==='sizer' ? '' : 'none';
   if(view==='entryexit') initEntryExitLab();
   if(view==='allocation') initRebalCalculator();
   if(view==='scenario') initScenarioSimulator();
+  if(view==='sizer') initPositionSizer();
 }
 
 function renderAllocationPlanner(){
@@ -1028,8 +1075,8 @@ function renderAllocationPlanner(){
   tbody.innerHTML = rows.map(r=>{
     let statusHtml;
     if(r.targetPct<=0){ statusHtml = '<span class="alloc-ontarget">ไม่มี Target</span>'; }
-    else if(r.gap > 1.5){ statusHtml = `<span class="alloc-over">🔺 Overweight</span>`; }
-    else if(r.gap < -1.5){ statusHtml = `<span class="alloc-under">🔻 Underweight</span>`; }
+    else if(r.gap > 1.5){ statusHtml = `<span class="alloc-over">▲ Overweight</span>`; }
+    else if(r.gap < -1.5){ statusHtml = `<span class="alloc-under">▼ Underweight</span>`; }
     else { statusHtml = `<span class="alloc-ontarget">✓ On Target</span>`; }
     const gapCls = r.gap>0.05?'neg':r.gap<-0.05?'pos':'neutral';
     return `<tr>
@@ -1045,7 +1092,81 @@ function renderAllocationPlanner(){
 }
 function setAllocFilter(p){ allocPortFilter = p; renderAllocationPlanner(); }
 
-// ---------- Rebalance Calculator (2 modes) ----------
+// ---------- Position Sizer ----------
+const ASSET_ARCHETYPES = [
+  {name:'Broad Market ETF (VT/S&P 500)', initial:'10–20%', full:'30–50%', note:'เข้าตามแผน DCA / Value Averaging'},
+  {name:'Quality Compounder', initial:'3–5%', full:'8–12%', note:'Revenue, Margin, FCF, ROIC ยืนยัน'},
+  {name:'High-Multiple Growth', initial:'2–4%', full:'6–8%', note:'Execution ดี ราคาไม่วิ่งเกิน thesis'},
+  {name:'Turnaround', initial:'1–2%', full:'3–5%', note:'Unit economics ดีขึ้น cash burn ลด'},
+  {name:'Pre-profit / Space / Binary', initial:'0.5–2%', full:'2–5%', note:'Funding runway, milestone, commercial proof'},
+  {name:'Bitcoin', initial:'2–5%', full:'5–10%', note:'ไม่เกิน risk budget · liquidity พอ'}
+];
+
+function initPositionSizer(){
+  const sel = document.getElementById('psTicker');
+  if(!sel.options.length){
+    const holdings = (RAW_DATA.holdings||[]).filter(h=>['Infinity','Nova','Spark','Victory'].includes(h.portfolio));
+    const tickers = [...new Set(holdings.map(h=>h.ticker))].sort();
+    sel.innerHTML = tickers.map(t=>`<option value="${t}">${t}</option>`).join('');
+    onPsTickerChange();
+  }
+  const tbody = document.getElementById('psArchetypeTable');
+  if(tbody && !tbody.dataset.built){
+    tbody.innerHTML = ASSET_ARCHETYPES.map(a=>`<tr>
+      <td><span style="font-weight:500">${a.name}</span></td>
+      <td><span class="mono">${a.initial}</span></td>
+      <td><span class="mono">${a.full}</span></td>
+      <td><span style="font-size:12px;color:var(--text3)">${a.note}</span></td>
+    </tr>`).join('');
+    tbody.dataset.built = '1';
+  }
+}
+
+function onPsTickerChange(){
+  const ticker = document.getElementById('psTicker').value;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const totalEquity = (RAW_DATA.holdings||[]).filter(x=>x.marketValueUSD>0 && ['Infinity','Nova','Spark','Victory'].includes(x.portfolio)).reduce((s,x)=>s+x.marketValueUSD,0);
+  const currentPct = (h && totalEquity>0) ? (h.marketValueUSD/totalEquity)*100 : 0;
+  document.getElementById('psCurrentInfo').textContent = h ? `ถืออยู่ปัจจุบัน ${currentPct.toFixed(2)}% ของพอร์ตหุ้น · ราคา $${h.price.toFixed(2)}` : 'ยังไม่ได้ถือหุ้นนี้';
+  calcPositionSizer();
+}
+
+function setPsStress(val, btn){
+  document.getElementById('psStressDD').value = val;
+  document.querySelectorAll('#psStressPreset .tag').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  calcPositionSizer();
+}
+
+function calcPositionSizer(){
+  const ticker = document.getElementById('psTicker').value;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const maxLoss = Number(document.getElementById('psMaxLoss').value);
+  const stressDD = Number(document.getElementById('psStressDD').value);
+  const resultsEl = document.getElementById('psResults');
+  if(!maxLoss || !stressDD){ resultsEl.innerHTML = ''; return; }
+
+  const maxPositionPct = (maxLoss/stressDD)*100;
+  const totalEquity = (RAW_DATA.holdings||[]).filter(x=>x.marketValueUSD>0 && ['Infinity','Nova','Spark','Victory'].includes(x.portfolio)).reduce((s,x)=>s+x.marketValueUSD,0);
+  const fx = RAW_DATA.dashboard.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+  const maxUSD = (maxPositionPct/100) * totalEquity;
+  const price = h ? h.price : 0;
+  const shares = price>0 ? maxUSD/price : 0;
+  const currentPct = (h && totalEquity>0) ? (h.marketValueUSD/totalEquity)*100 : 0;
+  const roomLeft = maxPositionPct - currentPct;
+
+  resultsEl.innerHTML = `
+    <div class="grid-4">
+      <div class="kpi"><div class="kpi-label">Max Position Size</div><div class="kpi-value pos">${maxPositionPct.toFixed(2)}%</div><div class="kpi-change neutral">= ${maxLoss}% ÷ ${stressDD}%</div></div>
+      <div class="kpi"><div class="kpi-label">คิดเป็นเงิน</div><div class="kpi-value">${fmt(cv(maxUSD))}</div>${price>0?`<div class="kpi-change neutral">≈ ${shares.toFixed(3)} หุ้น</div>`:''}</div>
+      <div class="kpi"><div class="kpi-label">ถืออยู่ปัจจุบัน</div><div class="kpi-value">${currentPct.toFixed(2)}%</div></div>
+      <div class="kpi"><div class="kpi-label">พื้นที่เหลือให้เพิ่ม</div><div class="kpi-value ${roomLeft>=0?'pos':'neg'}">${roomLeft>=0?'+':''}${roomLeft.toFixed(2)}%</div></div>
+    </div>
+  `;
+}
+
+
 function setRebalMode(mode, btn){
   rebalMode = mode;
   document.querySelectorAll('#rebalModeTags .tag').forEach(t=>t.classList.remove('active'));
@@ -1110,11 +1231,95 @@ function calcRebalance(){
 // ---------- Scenario Simulator ----------
 function initScenarioSimulator(){
   const sel = document.getElementById('scTicker');
-  if(sel.options.length) return;
-  const holdings = (RAW_DATA.holdings||[]).filter(h=>h.marketValueUSD>0);
-  const tickers = [...new Set(holdings.map(h=>h.ticker))].sort();
-  sel.innerHTML = tickers.map(t=>`<option value="${t}">${t}</option>`).join('');
-  onScTickerChange();
+  if(!sel.options.length){
+    const holdings = (RAW_DATA.holdings||[]).filter(h=>h.marketValueUSD>0);
+    const tickers = [...new Set(holdings.map(h=>h.ticker))].sort();
+    sel.innerHTML = tickers.map(t=>`<option value="${t}">${t}</option>`).join('');
+    onScTickerChange();
+  }
+  renderStressInputs();
+}
+
+const DEFAULT_SHOCKS = {Infinity:-15, Nova:-30, Spark:-20, Victory:-30, Gold:5, Crypto:-40, Fund:-10};
+
+function renderStressInputs(){
+  const el = document.getElementById('stressInputs');
+  if(!el || el.dataset.built) return;
+  const totalAll = RAW_DATA.dashboard.totalMarketValueUSD || 0;
+  const ports = (RAW_DATA.dashboard.byPortfolio||[]).filter(p=>p.valueUSD>0);
+  el.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl">
+      <thead><tr><th>Portfolio</th><th>น้ำหนัก</th><th>Shock ที่สมมติ (%)</th></tr></thead>
+      <tbody>
+        ${ports.map(p=>`<tr>
+          <td><span class="badge ${PORTFOLIO_BADGE[p.name]||'badge-legacy'}">${p.name}</span></td>
+          <td><span class="mono">${p.pct}%</span></td>
+          <td><input type="number" class="stress-shock-input" data-port="${p.name}" value="${DEFAULT_SHOCKS[p.name]||-20}" style="width:90px"></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+  el.dataset.built = '1';
+}
+
+function calcStressTest(){
+  const inputs = document.querySelectorAll('.stress-shock-input');
+  const ports = (RAW_DATA.dashboard.byPortfolio||[]).filter(p=>p.valueUSD>0);
+  let totalContribution = 0;
+  const rows = [];
+  inputs.forEach(inp=>{
+    const name = inp.dataset.port;
+    const shock = Number(inp.value) || 0;
+    const p = ports.find(x=>x.name===name);
+    const weight = p ? p.pct/100 : 0;
+    const contribution = weight * shock;
+    totalContribution += contribution;
+    rows.push({name, weight: weight*100, shock, contribution});
+  });
+
+  const resultEl = document.getElementById('stressResult');
+  const totalCls = totalContribution>=0?'pos':'neg';
+  resultEl.innerHTML = `
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+      <table class="tbl">
+        <thead><tr><th>Portfolio</th><th>น้ำหนัก</th><th>Shock</th><th>Contribution</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td>${r.name}</td>
+            <td><span class="mono">${r.weight.toFixed(1)}%</span></td>
+            <td class="${r.shock>=0?'pos':'neg'}"><span class="mono">${r.shock>=0?'+':''}${r.shock}%</span></td>
+            <td class="${r.contribution>=0?'pos':'neg'}"><span class="mono">${r.contribution>=0?'+':''}${r.contribution.toFixed(2)}%</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="kpi" style="max-width:260px">
+      <div class="kpi-label">พอร์ตรวมเสียหาย</div>
+      <div class="kpi-value ${totalCls}" style="font-size:26px">${totalContribution>=0?'+':''}${totalContribution.toFixed(2)}%</div>
+    </div>`;
+}
+
+function renderDamageMap(ticker){
+  const el = document.getElementById('scDamageMap');
+  if(!el) return;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const totalAll = RAW_DATA.dashboard.totalMarketValueUSD || 0;
+  if(!h || totalAll<=0){ el.innerHTML = '<div class="empty">ไม่มีข้อมูล</div>'; return; }
+  const weightPct = (h.marketValueUSD/totalAll)*100;
+  const levels = [10,25,40,60,100];
+  el.innerHTML = `
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">${ticker} คิดเป็น <b>${weightPct.toFixed(2)}%</b> ของพอร์ตรวมทั้งหมด</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="tbl">
+        <thead><tr><th>ถ้า ${ticker} ร่วง</th><th>พอร์ตรวมเสียหาย</th></tr></thead>
+        <tbody>
+          ${levels.map(l=>{
+            const dmg = (weightPct/100)*l;
+            return `<tr><td class="neg">-${l}%</td><td class="neg"><span class="mono">-${dmg.toFixed(2)}%</span></td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function onScTickerChange(){
@@ -1124,6 +1329,7 @@ function onScTickerChange(){
   document.getElementById('scValue').value = h ? Math.round(h.marketValueUSD) : '';
   document.getElementById('scCurrentInfo').textContent = h ? `ถืออยู่ ${h.units.toFixed(4)} หุ้น · มูลค่าปัจจุบัน $${h.marketValueUSD.toFixed(2)}` : '';
   calcScenario();
+  renderDamageMap(ticker);
 }
 
 const DRAWDOWN_LEVELS = [5,10,20,30,50];
@@ -1162,7 +1368,7 @@ function calcScenario(){
         </table>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--text3)">💡 ตัวอย่าง: ถ้าราคาลง -50% ต้องขึ้น +100% ถึงจะคืนทุน — ยิ่งลงลึก ยิ่งต้องขึ้นแรงกว่าเดิมมากเพื่อกลับมาเท่าทุน ใช้เช็คก่อนซื้อหุ้น risk สูง</div>
+    <div style="font-size:11px;color:var(--text3)"><b>หมายเหตุ:</b> ตัวอย่าง: ถ้าราคาลง -50% ต้องขึ้น +100% ถึงจะคืนทุน — ยิ่งลงลึก ยิ่งต้องขึ้นแรงกว่าเดิมมากเพื่อกลับมาเท่าทุน ใช้เช็คก่อนซื้อหุ้น risk สูง</div>
   `;
 }
 
