@@ -113,6 +113,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 @keyframes goalGlow{0%,100%{box-shadow:0 0 0 0 rgba(224,176,0,0)}50%{box-shadow:0 0 10px 1px rgba(224,176,0,.35)}}
 .goal-reorder{display:flex;flex-direction:column;gap:1px;cursor:pointer;color:var(--text4);font-size:9px;line-height:1}
 .goal-reorder span:hover{color:var(--green)}
+.tool-section{border-radius:var(--r-lg);padding:2px 0 18px;margin-bottom:4px}
+.tool-section-header{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--text1);padding:10px 14px;border-radius:var(--r-sm) var(--r-sm) 0 0;margin-bottom:0}
+.tool-section-body{border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);padding:16px}
+.ts-1 .tool-section-header{background:#e8f0ff;color:#2d5fa8}
+.ts-1 .tool-section-body{border-color:#d5e3fa}
+.ts-2 .tool-section-header{background:#f0e8ff;color:#6b3fa8}
+.ts-2 .tool-section-body{border-color:#e2d5fa}
+.ts-3 .tool-section-header{background:#fff0e0;color:#c46a1a}
+.ts-3 .tool-section-body{border-color:#f5ddc0}
+.cost-pos{color:var(--emerald);font-weight:600}
+.cost-neg{color:var(--red);font-weight:600}
 .alloc-over{background:#fde8e8;color:#c44b3a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .alloc-under{background:#fdf0e0;color:#c47a2a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .alloc-ontarget{background:var(--green-light);color:var(--green2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
@@ -407,31 +418,39 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div id="toolScenario" style="display:none">
-        <div class="card-sm" style="margin-bottom:14px">
-          <div class="card-title">Scenario Simulator</div>
-          <div class="card-sub">จำลองว่าถ้าหุ้นร่วงกี่ % พอร์ตจะเสียหายเท่าไหร่ และต้องใช้เวลาฟื้นแค่ไหน</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
-            <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="scTicker" onchange="onScTickerChange()" style="width:140px"></select></div>
-            <div><label style="font-size:11px;color:var(--text3)">ราคาปัจจุบัน</label><br><input type="number" id="scPrice" oninput="calcScenario()" style="width:120px"></div>
-            <div><label style="font-size:11px;color:var(--text3)">มูลค่า Position ($)</label><br><input type="number" id="scValue" oninput="calcScenario()" style="width:130px"></div>
+
+        <div class="tool-section ts-1">
+          <div class="tool-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 15-5-5-4 4-3-3"/></svg> ส่วนที่ 1 · Drawdown Table — หุ้นตัวเดียว ถ้าร่วง จะเสียเท่าไหร่</div>
+          <div class="tool-section-body">
+            <div class="card-sub" style="margin-bottom:10px">เลือกหุ้น ระบบจะเทียบให้ทั้งจาก "ราคาปัจจุบัน" และ "ต้นทุนเฉลี่ยของออมมี่" พร้อมกัน</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
+              <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="scTicker" onchange="onScTickerChange()" style="width:140px"></select></div>
+              <div><label style="font-size:11px;color:var(--text3)">ราคาปัจจุบัน</label><br><input type="number" id="scPrice" oninput="calcScenario()" style="width:120px"></div>
+              <div><label style="font-size:11px;color:var(--text3)">มูลค่า Position ($)</label><br><input type="number" id="scValue" oninput="calcScenario()" style="width:130px"></div>
+            </div>
+            <div id="scCurrentInfo" style="font-size:11px;color:var(--text3);margin-bottom:10px"></div>
+            <div id="scResults"></div>
           </div>
-          <div id="scCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
-        </div>
-        <div id="scResults"></div>
-
-        <div class="card-sm" style="margin-top:14px">
-          <div class="card-title">Portfolio Damage Map</div>
-          <div class="card-sub">Portfolio Damage = น้ำหนักที่ถือจริง (% ของพอร์ต) × Asset Drawdown — จากหนังสือ Risk Management Playbook</div>
-          <div id="scDamageMap"></div>
         </div>
 
-        <div class="card-sm" style="margin-top:14px">
-          <div class="card-title">Full Portfolio Stress Test</div>
-          <div class="card-sub">ใส่ shock % ให้แต่ละพอร์ต แล้วดูว่าพอร์ตรวมเสียหายเท่าไหร่ (Static instantaneous shock — ยังไม่รวม rebalancing/tax)</div>
-          <div id="stressInputs" style="margin-bottom:12px"></div>
-          <button onclick="calcStressTest()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;margin-bottom:12px">คำนวณ Stress Test</button>
-          <div id="stressResult"></div>
+        <div class="tool-section ts-2">
+          <div class="tool-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg> ส่วนที่ 2 · Portfolio Damage Map — หุ้นตัวนี้กระทบ "พอร์ตรวม" แค่ไหน</div>
+          <div class="tool-section-body">
+            <div class="card-sub" style="margin-bottom:10px">Portfolio Damage = น้ำหนักที่ถือจริง (% ของพอร์ต) × Asset Drawdown — ใช้ ticker เดียวกับส่วนที่ 1 ด้านบน ไม่ต้องเลือกซ้ำ</div>
+            <div id="scDamageMap"></div>
+          </div>
         </div>
+
+        <div class="tool-section ts-3">
+          <div class="tool-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> ส่วนที่ 3 · Full Portfolio Stress Test — ถ้าทุกพอร์ตร่วงพร้อมกัน</div>
+          <div class="tool-section-body">
+            <div class="card-sub" style="margin-bottom:10px">ใส่ shock % ให้แต่ละพอร์ต (มี default ให้แล้ว แก้ได้) แล้วดูว่าพอร์ตรวมทั้งหมดเสียหายเท่าไหร่</div>
+            <div id="stressInputs" style="margin-bottom:12px"></div>
+            <button onclick="calcStressTest()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;margin-bottom:12px">คำนวณ Stress Test</button>
+            <div id="stressResult"></div>
+          </div>
+        </div>
+
       </div>
 
       <div id="toolSizer" style="display:none">
@@ -449,6 +468,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             <button class="tag" onclick="setPsStress(60, this)">-60%</button>
             <button class="tag" onclick="setPsStress(100, this)">-100% (Permanent loss)</button>
           </div>
+          <div id="psHistDD" style="margin-top:8px"></div>
           <div id="psCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
         </div>
         <div id="psResults"></div>
@@ -1127,7 +1147,23 @@ function onPsTickerChange(){
   const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
   const totalEquity = (RAW_DATA.holdings||[]).filter(x=>x.marketValueUSD>0 && ['Infinity','Nova','Spark','Victory'].includes(x.portfolio)).reduce((s,x)=>s+x.marketValueUSD,0);
   const currentPct = (h && totalEquity>0) ? (h.marketValueUSD/totalEquity)*100 : 0;
-  document.getElementById('psCurrentInfo').textContent = h ? `ถืออยู่ปัจจุบัน ${currentPct.toFixed(2)}% ของพอร์ตหุ้น · ราคา $${h.price.toFixed(2)}` : 'ยังไม่ได้ถือหุ้นนี้';
+  const histDD = GROWTH_DATA && GROWTH_DATA.maxDrawdownByTicker ? GROWTH_DATA.maxDrawdownByTicker[ticker] : null;
+
+  let infoText = h ? `ถืออยู่ปัจจุบัน ${currentPct.toFixed(2)}% ของพอร์ตหุ้น · ราคา $${h.price.toFixed(2)}` : 'ยังไม่ได้ถือหุ้นนี้';
+  const histBox = document.getElementById('psHistDD');
+  if(histDD){
+    infoText += ` · ร่วงหนักสุดในประวัติที่มี (ตั้งแต่ 2024): -${histDD}%`;
+    histBox.innerHTML = `<button class="tag active" onclick="applyHistDD(${histDD})" style="background:var(--amber);border-color:var(--amber)">ใช้ค่าจากประวัติจริง: -${histDD}%</button>`;
+  } else {
+    histBox.innerHTML = '';
+  }
+  document.getElementById('psCurrentInfo').textContent = infoText;
+  calcPositionSizer();
+}
+
+function applyHistDD(val){
+  document.getElementById('psStressDD').value = val;
+  document.querySelectorAll('#psStressPreset .tag').forEach(t=>t.classList.remove('active'));
   calcPositionSizer();
 }
 
@@ -1335,40 +1371,44 @@ function onScTickerChange(){
 const DRAWDOWN_LEVELS = [5,10,20,30,50];
 
 function calcScenario(){
+  const ticker = document.getElementById('scTicker').value;
   const price = Number(document.getElementById('scPrice').value);
   const value = Number(document.getElementById('scValue').value);
   const resultsEl = document.getElementById('scResults');
   if(!price || !value){ resultsEl.innerHTML = ''; return; }
   const fx = RAW_DATA.dashboard.fxRateUSDTHB || 33.8;
   const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const avgCost = h ? h.avgCostUSD : null;
 
   const rows = DRAWDOWN_LEVELS.map(pct=>{
     const newPrice = price*(1-pct/100);
     const newValue = value*(1-pct/100);
     const loss = value - newValue;
     const recoveryPct = (pct/(100-pct))*100;
-    return {pct, newPrice, newValue, loss, recoveryPct};
+    const vsCostPct = avgCost>0 ? ((newPrice-avgCost)/avgCost)*100 : null;
+    return {pct, newPrice, newValue, loss, recoveryPct, vsCostPct};
   });
 
   resultsEl.innerHTML = `
-    <div class="card-sm" style="margin-bottom:14px">
-      <div class="card-title">Drawdown Table</div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <table class="tbl">
-          <thead><tr><th>ร่วง</th><th>ราคาใหม่</th><th>มูลค่าใหม่</th><th>เสียไป</th><th>ต้องขึ้นกี่ % ถึงคืนทุน</th></tr></thead>
-          <tbody>
-            ${rows.map(r=>`<tr>
-              <td><span style="font-weight:600;color:var(--red)">-${r.pct}%</span></td>
-              <td><span class="mono">${fmt(cv(r.newPrice))}</span></td>
-              <td><span class="mono">${fmt(cv(r.newValue))}</span></td>
-              <td class="neg"><span class="mono">-${fmt(cv(r.loss))}</span></td>
-              <td><span class="mono pos">+${r.recoveryPct.toFixed(1)}%</span></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="tbl">
+        <thead><tr><th>ร่วงจากราคาปัจจุบัน</th><th>ราคาใหม่</th><th>มูลค่าใหม่</th><th>เสียไป (จากวันนี้)</th>${avgCost?`<th>เทียบต้นทุนเฉลี่ย ($${avgCost.toFixed(2)})</th>`:''}<th>ต้องขึ้นกี่ % ถึงคืนทุน</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td><span style="font-weight:600;color:var(--red)">-${r.pct}%</span></td>
+            <td><span class="mono">${fmt(cv(r.newPrice))}</span></td>
+            <td><span class="mono">${fmt(cv(r.newValue))}</span></td>
+            <td class="neg"><span class="mono">-${fmt(cv(r.loss))}</span></td>
+            ${avgCost?`<td><span class="mono ${r.vsCostPct>=0?'cost-pos':'cost-neg'}">${r.vsCostPct>=0?'+':''}${r.vsCostPct.toFixed(1)}%</span></td>`:''}
+            <td><span class="mono pos">+${r.recoveryPct.toFixed(1)}%</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
     </div>
-    <div style="font-size:11px;color:var(--text3)"><b>หมายเหตุ:</b> ตัวอย่าง: ถ้าราคาลง -50% ต้องขึ้น +100% ถึงจะคืนทุน — ยิ่งลงลึก ยิ่งต้องขึ้นแรงกว่าเดิมมากเพื่อกลับมาเท่าทุน ใช้เช็คก่อนซื้อหุ้น risk สูง</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:10px">
+      <b>วิธีอ่าน:</b> "เสียไป" คือเทียบจากราคาวันนี้ ${avgCost?`ส่วน "เทียบต้นทุนเฉลี่ย" คือถ้าราคาลงมาระดับนี้ ยังกำไร/ขาดทุนจากต้นทุนจริงที่ซื้อมาเท่าไหร่`:''} — ตัวอย่าง: ราคาลง -50% ต้องขึ้น +100% ถึงจะคืนทุนจากจุดนั้น
+    </div>
   `;
 }
 
