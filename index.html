@@ -124,6 +124,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .ts-3 .tool-section-body{border-color:#f5ddc0}
 .cost-pos{color:var(--emerald);font-weight:600}
 .cost-neg{color:var(--red);font-weight:600}
+.thesis-header{background:var(--green-light);border:1px solid rgba(42,122,80,.15);border-radius:var(--r-lg);padding:20px;margin-bottom:20px}
+.thesis-ticker{font-size:28px;font-weight:600;color:var(--green2);letter-spacing:-1px}
+.thesis-company{font-size:14px;color:var(--text2);margin-top:2px}
+.thesis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.thesis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.thesis-card-num{font-size:10px;font-weight:500;color:var(--green-muted);font-family:var(--mono);margin-bottom:6px}
+.thesis-card-title{font-size:12px;font-weight:600;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px}
+.thesis-card-body{font-size:13px;color:var(--text2);line-height:1.7}
+.conviction-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.conviction-fill{height:100%;background:var(--green);border-radius:3px}
 .alloc-over{background:#fde8e8;color:#c44b3a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .alloc-under{background:#fdf0e0;color:#c47a2a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .alloc-ontarget{background:var(--green-light);color:var(--green2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
@@ -162,7 +172,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     </div>
   </div>
   <nav class="nav">
-    <button class="nav-item disabled" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Thesis Monitor<span class="nav-badge">Phase 6</span></button>
+    <button class="nav-item" onclick="navigate('thesis')" id="nav-thesis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Thesis Monitor</button>
     <button class="nav-item active" onclick="navigate('tracker')" id="nav-tracker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio Tracker</button>
     <button class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard</button>
     <button class="nav-item" onclick="navigate('decision')" id="nav-decision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Decision Engine</button>
@@ -199,6 +209,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <div id="loadingState" style="text-align:center;padding:60px 20px">
       <div class="spinner"></div>
       <div style="margin-top:14px;color:var(--text3);font-size:13px">กำลังโหลดข้อมูล...</div>
+    </div>
+
+    <!-- ===== PAGE: THESIS MONITOR ===== -->
+    <div class="page" id="page-thesis">
+      <div class="section-title">Thesis Monitor</div>
+      <div class="section-sub">AI-powered 14-point investment research framework — ขับเคลื่อนด้วย Cloudflare Workers AI (ฟรี)</div>
+
+      <div id="aiSetupBox" class="setup-box" style="display:none">
+        <div style="font-size:14px;font-weight:500;margin-bottom:6px">ยังไม่ได้ตั้งค่า AI Worker URL</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">วาง URL ของ Cloudflare Worker (ลงท้ายด้วย .workers.dev)</div>
+        <input type="text" id="aiUrlInput" placeholder="https://ormmy-thesis-ai.xxx.workers.dev">
+        <br><button onclick="saveAiUrl()">บันทึก</button>
+      </div>
+
+      <div id="thesisMain" style="display:none">
+        <div class="search-box" style="display:flex;gap:10px;margin-bottom:16px">
+          <input type="text" id="thesisInput" placeholder="พิมพ์ ticker เช่น NVDA, AMZN, SNOW, ASML..." style="flex:1;height:44px;font-size:14px">
+          <button class="btn-primary" onclick="runThesis()" style="height:44px;padding:0 24px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;cursor:pointer">วิเคราะห์</button>
+        </div>
+        <div class="tag-row" id="thesisSuggested" style="margin-bottom:20px"></div>
+
+        <div id="thesisLoading" style="display:none;text-align:center;padding:60px 20px">
+          <div class="spinner"></div>
+          <div style="font-size:14px;color:var(--text2);font-weight:500;margin-top:14px" id="thesisLoadingTxt">กำลังวิเคราะห์...</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px">โมเดล open-source รันบน Cloudflare — อาจใช้เวลา 20-40 วินาที</div>
+        </div>
+
+        <div id="thesisPlaceholder" style="text-align:center;padding:60px 20px">
+          <div style="font-size:16px;font-weight:500;color:var(--text1);margin-bottom:8px">AI Equity Research Terminal</div>
+          <div style="font-size:13px;color:var(--text3);max-width:420px;margin:0 auto;line-height:1.7">พิมพ์ชื่อหุ้นเพื่อสร้าง investment thesis แบบ 14-point framework</div>
+        </div>
+
+        <div id="thesisResult" style="display:none"></div>
+      </div>
     </div>
 
     <!-- ===== PAGE: TRACKER ===== -->
@@ -535,12 +579,13 @@ function navigate(page){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.getElementById('nav-'+page).classList.add('active');
-  const titles = {tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status'], tools:['Tools Lab','เครื่องมือช่วย monitor และไกด์การลงทุน']};
+  const titles = {thesis:['Thesis Monitor','14-Point Investment Analysis (AI)'], tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status'], tools:['Tools Lab','เครื่องมือช่วย monitor และไกด์การลงทุน']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
   if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); } }
   if(page==='decision' && RAW_DATA) renderDecision();
   if(page==='tools' && RAW_DATA) renderAllocationPlanner();
+  if(page==='thesis') checkAiSetup();
 }
 
 async function loadData(){
@@ -1563,6 +1608,121 @@ function renderDecision(){
     </div>`;
   }).join('');
 }
+
+
+// ---------- Thesis Monitor (AI via Cloudflare Workers AI) ----------
+const AI_URL_KEY = 'ormmy_ai_worker_url';
+function getAiUrl(){ return localStorage.getItem(AI_URL_KEY) || ''; }
+function saveAiUrl(){
+  const v = document.getElementById('aiUrlInput').value.trim();
+  if(!v) return;
+  localStorage.setItem(AI_URL_KEY, v);
+  checkAiSetup();
+}
+
+function checkAiSetup(){
+  const url = getAiUrl();
+  if(!url){
+    document.getElementById('aiSetupBox').style.display = 'block';
+    document.getElementById('thesisMain').style.display = 'none';
+    return;
+  }
+  document.getElementById('aiSetupBox').style.display = 'none';
+  document.getElementById('thesisMain').style.display = 'block';
+  populateThesisSuggested();
+}
+
+function populateThesisSuggested(){
+  const el = document.getElementById('thesisSuggested');
+  if(!RAW_DATA || !RAW_DATA.holdings){ el.innerHTML=''; return; }
+  const tickers = [...new Set(RAW_DATA.holdings.filter(h=>['Infinity','Nova','Spark','Victory'].includes(h.portfolio)).map(h=>h.ticker))].sort();
+  el.innerHTML = '<span style="font-size:11px;color:var(--text3);align-self:center">หุ้นในพอร์ต:</span>' +
+    tickers.map(t=>`<button class="tag" onclick="setThesisTicker('${t}')">${t}</button>`).join('');
+}
+function setThesisTicker(t){ document.getElementById('thesisInput').value = t; runThesis(); }
+
+async function runThesis(){
+  const ticker = document.getElementById('thesisInput').value.trim().toUpperCase();
+  if(!ticker) return;
+  const url = getAiUrl();
+  if(!url){ checkAiSetup(); return; }
+
+  document.getElementById('thesisPlaceholder').style.display = 'none';
+  document.getElementById('thesisResult').style.display = 'none';
+  document.getElementById('thesisLoading').style.display = 'block';
+
+  const msgs = ['กำลังอ่านข้อมูลพอร์ต...','กำลังวิเคราะห์ตาม 14-point framework...','กำลังสร้างรายงาน...','เกือบเสร็จแล้ว...'];
+  let mi=0; const lt = document.getElementById('thesisLoadingTxt');
+  const iv = setInterval(()=>{ lt.textContent = msgs[mi%msgs.length]; mi++; }, 4000);
+
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const dec = (RAW_DATA.decisions||[]).find(x=>x.ticker===ticker);
+  const portfolioContext = h ? `This stock is currently held in the ${h.portfolio} portfolio. Current price: $${h.price}, avg cost: $${h.avgCostUSD.toFixed(2)}, weight target: ${h.targetPct}%.` : 'This is a potential new position, not currently held.';
+  const decisionContext = dec ? `Current decision status: ${dec.action}. Zone: ${dec.zone}. Metrics: ${dec.metricsStatus}. Existing thesis note: ${dec.thesis}` : '';
+
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ticker, portfolioContext, decisionContext })
+    });
+    const data = await res.json();
+    clearInterval(iv);
+    document.getElementById('thesisLoading').style.display = 'none';
+    if(data.error){
+      document.getElementById('thesisResult').style.display = 'block';
+      document.getElementById('thesisResult').innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--text3)">วิเคราะห์ไม่สำเร็จ<br><small style="color:var(--red)">${data.error}</small></div>`;
+      return;
+    }
+    renderThesisResult(ticker, data);
+  }catch(err){
+    clearInterval(iv);
+    document.getElementById('thesisLoading').style.display = 'none';
+    document.getElementById('thesisResult').style.display = 'block';
+    document.getElementById('thesisResult').innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--text3)">เชื่อมต่อ AI Worker ไม่สำเร็จ<br><small style="color:var(--red)">${err.message}</small></div>`;
+  }
+}
+
+function renderThesisResult(ticker, d){
+  const convColor = d.conviction >= 80 ? 'pos' : d.conviction >= 60 ? 'neutral' : 'neg';
+  let html = `
+    <div class="thesis-header">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div class="thesis-ticker">${ticker}</div>
+          <div class="thesis-company">${d.company||''}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-left:auto">
+          <span class="badge badge-infinity">${d.portfolio||'Watch'}</span>
+          <span class="badge" style="background:var(--surface);border:1px solid var(--border);color:var(--text2)">${d.sector||''}</span>
+          <div>
+            <div style="font-size:10px;color:var(--text3);font-weight:500">Conviction</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px" class="conviction-bar"><div class="conviction-fill" style="width:${d.conviction||0}%"></div></div>
+              <span class="fw-600 ${convColor}" style="font-size:13px">${d.conviction||'—'}/100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="thesis-grid">`;
+  (d.thesis||[]).forEach(t=>{
+    html += `<div class="thesis-card">
+      <div class="thesis-card-num">${t.num} / 14</div>
+      <div class="thesis-card-title">${t.title}</div>
+      <div class="thesis-card-body">${t.content}</div>
+    </div>`;
+  });
+  html += '</div>';
+  const el = document.getElementById('thesisResult');
+  el.style.display = 'block';
+  el.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const inp = document.getElementById('thesisInput');
+  if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter') runThesis(); });
+});
 
 
 (function(){
