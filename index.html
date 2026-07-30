@@ -1714,6 +1714,35 @@ function renderThesisResult(ticker, d){
     </div>`;
   });
   html += '</div>';
+
+  if(d.priceTargets){
+    html += `<div class="dash-section-header" style="margin-top:24px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> ราคาเป้าหมาย (Price Target)</div>
+    <div class="grid-3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+      <div class="card-sm" style="border-left:4px solid var(--emerald)"><div class="card-title" style="color:var(--emerald)">Bull Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bull||'—'}</div></div>
+      <div class="card-sm" style="border-left:4px solid var(--amber)"><div class="card-title" style="color:var(--amber)">Base Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.base||'—'}</div></div>
+      <div class="card-sm" style="border-left:4px solid var(--red)"><div class="card-title" style="color:var(--red)">Bear Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bear||'—'}</div></div>
+    </div>`;
+  }
+
+  if(d.valuation){
+    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> เทียบ Valuation กับคู่แข่ง</div>
+    <div class="card-sm" style="margin-bottom:24px"><div style="font-size:13px;color:var(--text2);line-height:1.7">${d.valuation}</div></div>`;
+  }
+
+  if(d.catalysts && d.catalysts.length){
+    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Catalyst Calendar — เหตุการณ์ที่ต้องจับตา</div>
+    <div class="card-sm" style="margin-bottom:24px">
+      <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text2);line-height:2">
+        ${d.catalysts.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  if(d.bearCase){
+    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> <span style="color:var(--red)">Bear Case — ถ้า Thesis นี้พัง</span></div>
+    <div class="card-sm" style="border:1px solid #f0c0b8;background:#fdf5f3"><div style="font-size:13px;color:var(--text1);line-height:1.7">${d.bearCase}</div></div>`;
+  }
+
   const el = document.getElementById('thesisResult');
   el.style.display = 'block';
   el.innerHTML = html;
