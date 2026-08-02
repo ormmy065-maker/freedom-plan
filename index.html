@@ -106,8 +106,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .zone-chip .zlabel{font-family:var(--font);font-weight:700;margin-right:5px}
 .dc-detail{font-size:11.5px;color:var(--text3);line-height:1.7;border-top:1px solid var(--border);padding-top:9px;margin-top:2px}
 .dc-detail b{color:var(--text2);font-weight:600}
-.dash-section{margin-bottom:30px;padding-bottom:2px}
-.dash-section-header{font-size:16px;font-weight:800;color:var(--text1);margin-bottom:14px;padding-bottom:10px;border-bottom:2.5px solid var(--green);display:flex;align-items:center;gap:8px}
+.dash-section-header-OLD-UNUSED{display:none}
 .goal-card{position:relative;margin-bottom:10px;padding:12px 14px;background:var(--surface2);border-radius:var(--r-sm);border-left:4px solid var(--border2);overflow:hidden}
 .goal-card.near-done{border-left-color:#e0b400;background:linear-gradient(90deg, #fff8e0 0%, var(--surface2) 60%);animation:goalGlow 2s ease-in-out infinite}
 @keyframes goalGlow{0%,100%{box-shadow:0 0 0 0 rgba(224,176,0,0)}50%{box-shadow:0 0 10px 1px rgba(224,176,0,.35)}}
@@ -124,14 +123,44 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .ts-3 .tool-section-body{border-color:#f5ddc0}
 .cost-pos{color:var(--emerald);font-weight:600}
 .cost-neg{color:var(--red);font-weight:600}
+
+/* ===== Themed section boxes (bleed technique - header bleeds to box edges) ===== */
+.dash-section{border-radius:var(--r-lg);margin-bottom:16px;padding:0 16px 16px;border:1px solid var(--border)}
+.dash-section-header{font-size:15px;font-weight:800;margin:0 -16px 14px;padding:11px 16px;display:flex;align-items:center;gap:8px;border-radius:var(--r-lg) var(--r-lg) 0 0}
+
+/* Thesis Monitor — purple shades */
+.pm-1{border-color:#e0cdf7}.pm-1 .dash-section-header{background:#efe6fb;color:#5c2f9e}
+.pm-2{border-color:#d6bdf2}.pm-2 .dash-section-header{background:#e4d4f7;color:#4f2489}
+.pm-3{border-color:#e6d6f5}.pm-3 .dash-section-header{background:#f2e9fb;color:#6b3fa8}
+.pm-4{border-color:#ecdefa}.pm-4 .dash-section-header{background:#f7f0fd;color:#7c4dbd}
+.pm-5{border-color:#f0c0b8}.pm-5 .dash-section-header{background:#fde3de;color:#a8321c}
+
+/* Portfolio Tracker — blue */
+.pt-1{border-color:#d0e0f5}.pt-1 .dash-section-header{background:#e3ecfa;color:#2d5fa8}
+
+/* Dashboard — green shades (light to deeper) */
+.pd-1{border-color:#d6ecdf}.pd-1 .dash-section-header{background:#e8f5ee;color:#1f5e3c}
+.pd-2{border-color:#c8e6d4}.pd-2 .dash-section-header{background:#dcf0e6;color:#1a5233}
+.pd-3{border-color:#d2edde}.pd-3 .dash-section-header{background:#eaf7f0;color:#256b45}
+.pd-4{border-color:#cbe8d8}.pd-4 .dash-section-header{background:#e0f2e9;color:#1f5e3c}
+.pd-5{border-color:#dcf0e6}.pd-5 .dash-section-header{background:#f0f9f4;color:#2a7a50}
+.pd-6{border-color:#d0e9dc}.pd-6 .dash-section-header{background:#e6f3ec;color:#1a5c3a}
+.pd-7{border-color:#c4e4d2}.pd-7 .dash-section-header{background:#daf0e4;color:#164a2d}
+.pd-perf{border-color:#b8dfc8}.pd-perf .dash-section-header{background:#d0ecdc;color:#164a2d}
+
+/* Decision Engine — amber */
+.pe-1{border-color:#f5ddc0}.pe-1 .dash-section-header{background:#fdf0e0;color:#8a5010}
 .thesis-header{background:var(--green-light);border:1px solid rgba(42,122,80,.15);border-radius:var(--r-lg);padding:20px;margin-bottom:20px}
 .thesis-ticker{font-size:28px;font-weight:600;color:var(--green2);letter-spacing:-1px}
 .thesis-company{font-size:14px;color:var(--text2);margin-top:2px}
-.thesis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-.thesis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
-.thesis-card-num{font-size:10px;font-weight:500;color:var(--green-muted);font-family:var(--mono);margin-bottom:6px}
-.thesis-card-title{font-size:12px;font-weight:600;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px}
-.thesis-card-body{font-size:13px;color:var(--text2);line-height:1.7}
+.thesis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.thesis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:box-shadow .15s}
+.thesis-card:hover{box-shadow:var(--shadow2)}
+.thesis-card-num{font-size:11px;font-weight:700;color:#9b6fd4;font-family:var(--mono);margin-bottom:6px;letter-spacing:.5px}
+.thesis-card-title{font-size:14px;font-weight:800;color:var(--text1);margin-bottom:10px;letter-spacing:.1px}
+.thesis-card-body{font-size:14px;color:var(--text2);line-height:1.8}
+.thesis-card.highlight{border-color:#d6bdf2;background:linear-gradient(180deg,#faf7ff 0%,var(--surface) 100%)}
+.thesis-card.highlight .thesis-card-title{color:#6b3fa8;font-size:15px}
 .conviction-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
 .conviction-fill{height:100%;background:var(--green);border-radius:3px}
 .alloc-over{background:#fde8e8;color:#c44b3a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
@@ -224,11 +253,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div id="thesisMain" style="display:none">
-        <div class="search-box" style="display:flex;gap:10px;margin-bottom:16px">
-          <input type="text" id="thesisInput" placeholder="พิมพ์ ticker เช่น NVDA, AMZN, SNOW, ASML..." style="flex:1;height:44px;font-size:14px">
-          <button class="btn-primary" onclick="runThesis()" style="height:44px;padding:0 24px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;cursor:pointer">วิเคราะห์</button>
+        <div class="dash-section pm-1">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> ค้นหาหุ้น</div>
+          <div class="search-box" style="display:flex;gap:10px;margin-bottom:16px">
+            <input type="text" id="thesisInput" placeholder="พิมพ์ ticker เช่น NVDA, AMZN, SNOW, ASML..." style="flex:1;height:44px;font-size:14px">
+            <button class="btn-primary" onclick="runThesis()" style="height:44px;padding:0 24px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;cursor:pointer">วิเคราะห์</button>
+          </div>
+          <div class="tag-row" id="thesisSuggested" style="margin:0"></div>
         </div>
-        <div class="tag-row" id="thesisSuggested" style="margin-bottom:20px"></div>
 
         <div id="thesisLoading" style="display:none;text-align:center;padding:60px 20px">
           <div class="spinner"></div>
@@ -249,21 +281,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <div class="page active" id="page-tracker">
       <div class="section-title">Portfolio Tracker</div>
       <div class="section-sub">Holdings ทั้งหมด คำนวณ avg cost / market value / P&L แบบ real-time จาก Transactions</div>
-      <div class="grid-4">
-        <div class="kpi"><div class="kpi-label">Total Value</div><div class="kpi-value" id="kTotal">—</div></div>
-        <div class="kpi"><div class="kpi-label">Total Cost</div><div class="kpi-value" id="kCost">—</div></div>
-        <div class="kpi"><div class="kpi-label">Unrealized P&L</div><div class="kpi-value" id="kPnl">—</div><div class="kpi-change" id="kPnlPct">—</div></div>
-        <div class="kpi"><div class="kpi-label">Positions</div><div class="kpi-value" id="kCount">—</div><div class="kpi-change neutral" id="kPorts">—</div></div>
-      </div>
-      <div class="tag-row" id="filterTags"></div>
-      <div class="card">
-        <table class="tbl">
-          <thead><tr>
-            <th>Ticker</th><th>Portfolio</th><th>Sector</th><th>Units</th>
-            <th>Avg Cost</th><th>Price</th><th>Market Value</th><th>P&L</th><th>Return</th>
-          </tr></thead>
-          <tbody id="tblBody"></tbody>
-        </table>
+      <div class="dash-section pt-1">
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Holdings ปัจจุบัน</div>
+        <div class="grid-4">
+          <div class="kpi"><div class="kpi-label">Total Value</div><div class="kpi-value" id="kTotal">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total Cost</div><div class="kpi-value" id="kCost">—</div></div>
+          <div class="kpi"><div class="kpi-label">Unrealized P&L</div><div class="kpi-value" id="kPnl">—</div><div class="kpi-change" id="kPnlPct">—</div></div>
+          <div class="kpi"><div class="kpi-label">Positions</div><div class="kpi-value" id="kCount">—</div><div class="kpi-change neutral" id="kPorts">—</div></div>
+        </div>
+        <div class="tag-row" id="filterTags"></div>
+        <div class="card">
+          <table class="tbl">
+            <thead><tr>
+              <th>Ticker</th><th>Portfolio</th><th>Sector</th><th>Units</th>
+              <th>Avg Cost</th><th>Price</th><th>Market Value</th><th>P&L</th><th>Return</th>
+            </tr></thead>
+            <tbody id="tblBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -272,7 +307,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       <div class="section-title">Portfolio Dashboard</div>
       <div class="section-sub">สัดส่วนพอร์ตแยกตาม Portfolio / Sector / Asset Type — คำนวณจากข้อมูลจริง</div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-1">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg> ภาพรวม</div>
         <div class="grid-4">
           <div class="kpi"><div class="kpi-label">Total Portfolio Value</div><div class="kpi-value" id="dTotal">—</div></div>
@@ -282,7 +317,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
       </div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-perf">
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> Performance Summary <span style="font-weight:400;font-size:11px;opacity:.75">(Infinity/Nova/Spark/Victory)</span></div>
+        <div class="grid-4" style="margin-bottom:14px">
+          <div class="kpi"><div class="kpi-label">Total Invested Capital</div><div class="kpi-value" id="perfInvested">—</div></div>
+          <div class="kpi"><div class="kpi-label">Unrealized P/L</div><div class="kpi-value" id="perfUnrealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">Realized P/L</div><div class="kpi-value" id="perfRealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">Annualized Return (TWR)</div><div class="kpi-value" id="perfAnnualized">—</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card-sm">
+            <div class="card-title">Invested Capital vs Portfolio Value</div>
+            <div class="card-sub">เห็นว่ามูลค่าที่โตมาจาก "เงินใหม่" หรือ "กำไรจริง" กันแน่</div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-investedvsvalue"></canvas></div>
+          </div>
+          <div class="card-sm">
+            <div class="card-title">Monthly P/L (ประมาณจาก TWR)</div>
+            <div class="card-sub">กำไร/ขาดทุนรายเดือน ไม่รวมผลของเงินใหม่ที่เติม</div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-monthlypl"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-section pd-2">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg> สัดส่วนพอร์ต</div>
         <div class="grid-2">
           <div class="card-sm">
@@ -303,7 +360,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         <div id="portBreakdown" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"></div>
       </div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-3">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Sector Exposure</div>
         <div class="card-sm">
           <div class="card-title">ความเข้มข้นตาม Sector</div>
@@ -313,7 +370,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
       </div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-4">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> Portfolio Growth</div>
         <div class="card-sm">
           <div class="card-sub" id="growthNote">ผลตอบแทนแบบ Time-Weighted Return (ไม่รวมผลของเงินต้นใหม่ที่เติมเข้า)</div>
@@ -324,7 +381,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
       </div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-5">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 6 0z"/><path d="M19 8l-3 6a4 4 0 0 0 6 0z"/><path d="M5 8h14M8 21h8"/></svg> พอร์ตเทียบกับ Benchmark</div>
         <div class="card-sm">
           <div class="card-sub">Time-Weighted Return เทียบกับดัชนี — เลือกพอร์ตและดัชนีที่จะเทียบได้อิสระ</div>
@@ -343,7 +400,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
         </div>
       </div>
 
-      <div class="dash-section">
+      <div class="dash-section pd-6">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Liquidity Layer &amp; <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="var(--green)"/></svg> Investment Goals</div>
         <div class="grid-2">
           <div class="card-sm">
@@ -365,7 +422,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           </div>
         </div>
       </div>
-      <div class="dash-section">
+      <div class="dash-section pd-7">
         <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ความคืบหน้ารายปี</div>
         <div class="card-sm">
           <div class="card-sub">คำนวณจากข้อมูลจริง — ครอบคลุมเฉพาะ Infinity/Nova/Spark/Victory (Gold/Crypto/Fund ยังไม่มีประวัติราคาย้อนหลัง)</div>
@@ -385,19 +442,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <div class="page" id="page-decision">
       <div class="section-title">Decision Engine</div>
       <div class="section-sub">Buy / Hold / Stop — ประเมินจาก zone ราคา และ status ที่ตั้งไว้ใน Decision_Rules</div>
-      <div class="grid-4" style="margin-bottom:20px">
-        <div class="kpi"><div class="kpi-label">Buy Signals</div><div class="kpi-value pos" id="de-buy">—</div></div>
-        <div class="kpi"><div class="kpi-label">Hold</div><div class="kpi-value neutral" id="de-hold">—</div></div>
-        <div class="kpi"><div class="kpi-label">Stop / Watch</div><div class="kpi-value neg" id="de-stop">—</div></div>
-        <div class="kpi"><div class="kpi-label">In Buy Zone (Z1-Z3)</div><div class="kpi-value" id="de-zone">—</div></div>
+      <div class="dash-section pe-1">
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Decision Signals</div>
+        <div class="grid-4">
+          <div class="kpi"><div class="kpi-label">Buy Signals</div><div class="kpi-value pos" id="de-buy">—</div></div>
+          <div class="kpi"><div class="kpi-label">Hold</div><div class="kpi-value neutral" id="de-hold">—</div></div>
+          <div class="kpi"><div class="kpi-label">Stop / Watch</div><div class="kpi-value neg" id="de-stop">—</div></div>
+          <div class="kpi"><div class="kpi-label">In Buy Zone (Z1-Z3)</div><div class="kpi-value" id="de-zone">—</div></div>
+        </div>
+        <div class="tag-row" id="decisionTags">
+          <button class="tag active" onclick="filterDecision('all',this)">All</button>
+          <button class="tag" onclick="filterDecision('BUY',this)">Buy</button>
+          <button class="tag" onclick="filterDecision('HOLD',this)">Hold</button>
+          <button class="tag" onclick="filterDecision('STOP',this)">Stop / Watch</button>
+        </div>
+        <div id="decisionCards"></div>
       </div>
-      <div class="tag-row" id="decisionTags">
-        <button class="tag active" onclick="filterDecision('all',this)">All</button>
-        <button class="tag" onclick="filterDecision('BUY',this)">Buy</button>
-        <button class="tag" onclick="filterDecision('HOLD',this)">Hold</button>
-        <button class="tag" onclick="filterDecision('STOP',this)">Stop / Watch</button>
-      </div>
-      <div id="decisionCards"></div>
     </div>
 
     <!-- ===== PAGE: TOOLS LAB ===== -->
@@ -564,7 +624,7 @@ function setCurrency(cur){
   document.getElementById('curUSD').classList.toggle('active', cur==='USD');
   document.getElementById('curTHB').classList.toggle('active', cur==='THB');
   if(RAW_DATA){ renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner(); }
-  if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderYearlyStats(); }
+  if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderYearlyStats(); renderPerformanceSummary(); }
 }
 
 function fmt(n, cur){
@@ -582,7 +642,7 @@ function navigate(page){
   const titles = {thesis:['Thesis Monitor','14-Point Investment Analysis (AI)'], tracker:['Portfolio Tracker','ข้อมูลจริงจาก Google Sheet — คำนวณจาก Transaction Log'], dashboard:['Portfolio Dashboard','สัดส่วนพอร์ตแยกตามหมวดหมู่ต่างๆ'], decision:['Decision Engine','Buy / Hold / Stop — ประเมินจาก zone ราคาและ status'], tools:['Tools Lab','เครื่องมือช่วย monitor และไกด์การลงทุน']};
   document.getElementById('topTitle').textContent = titles[page][0];
   document.getElementById('topSub').textContent = titles[page][1];
-  if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); } }
+  if(page==='dashboard' && RAW_DATA) { renderDashboard(); if(GROWTH_DATA){ renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); renderPerformanceSummary(); } }
   if(page==='decision' && RAW_DATA) renderDecision();
   if(page==='tools' && RAW_DATA) renderAllocationPlanner();
   if(page==='thesis') checkAiSetup();
@@ -847,7 +907,7 @@ async function loadGrowth(){
     }
   }catch(e){
     const cached = localStorage.getItem('ormmy_growth_cache');
-    if(cached){ GROWTH_DATA = JSON.parse(cached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); }
+    if(cached){ GROWTH_DATA = JSON.parse(cached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); renderPerformanceSummary(); }
   }
 }
 
@@ -1013,8 +1073,85 @@ function renderYearlyStats(){
   }).join('');
 }
 
-// ---------- Investment Goals (localStorage) ----------
-const GOALS_KEY = 'ormmy_goals';
+// ---------- Performance Summary ----------
+function renderPerformanceSummary(){
+  if(!GROWTH_DATA || !GROWTH_DATA.performanceSummary || !GROWTH_DATA.series.length) return;
+  const p = GROWTH_DATA.performanceSummary;
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+
+  document.getElementById('perfInvested').textContent = fmt(cv(p.totalInvestedCapitalUSD));
+  const uEl = document.getElementById('perfUnrealized');
+  uEl.textContent = (p.unrealizedPLUSD>=0?'+':'') + fmt(cv(p.unrealizedPLUSD));
+  uEl.className = 'kpi-value ' + (p.unrealizedPLUSD>=0?'pos':'neg');
+  const rEl = document.getElementById('perfRealized');
+  rEl.textContent = (p.realizedPLUSD>=0?'+':'') + fmt(cv(p.realizedPLUSD));
+  rEl.className = 'kpi-value ' + (p.realizedPLUSD>=0?'pos':'neg');
+  const aEl = document.getElementById('perfAnnualized');
+  aEl.textContent = p.annualizedReturnPct!==null ? (p.annualizedReturnPct>=0?'+':'')+p.annualizedReturnPct.toFixed(1)+'%' : 'ยังไม่พอ (< 1 เดือน)';
+  aEl.className = 'kpi-value ' + (p.annualizedReturnPct>=0?'pos':'neg');
+
+  renderInvestedVsValueChart();
+  renderMonthlyPLChart();
+}
+
+function renderInvestedVsValueChart(){
+  const series = GROWTH_DATA.series;
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+  const labels = series.map(pt=>pt.date);
+  destroyChart('c-investedvsvalue');
+  const ctx = document.getElementById('c-investedvsvalue').getContext('2d');
+  CHARTS['c-investedvsvalue'] = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets:[
+      {label:'มูลค่าพอร์ต', data:series.map(pt=>cv(pt.totalUSD)), borderColor:'#2a7a50', backgroundColor:'rgba(42,122,80,.08)', fill:true, tension:.2, pointRadius:0, borderWidth:2},
+      {label:'เงินต้นสะสม', data:series.map(pt=>cv(pt.costCumulativeUSD||0)), borderColor:'#c47a2a', backgroundColor:'transparent', tension:.2, pointRadius:0, borderWidth:1.5, borderDash:[4,3]}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'top', labels:{boxWidth:10, font:{size:10}, color:'#3d5a47'}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:9}, maxTicksLimit:6}, grid:{display:false}},
+               y:{ticks:{color:'#6b8573', font:{size:10}, callback:v=>fmt(v)}, grid:{color:'rgba(42,122,80,.06)'}}}}
+  });
+}
+
+function renderMonthlyPLChart(){
+  const series = GROWTH_DATA.series;
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  const cv = (usd) => currentCurrency==='USD' ? usd : usd*fx;
+
+  // group by year-month, take last snapshot's TWR index of each month
+  const monthly = {};
+  series.forEach(pt=>{
+    const ym = pt.date.slice(0,7);
+    monthly[ym] = pt; // overwritten each time -> ends up as last point in that month
+  });
+  const months = Object.keys(monthly).sort();
+  const labels = [];
+  const values = [];
+  for(let i=1; i<months.length; i++){
+    const prev = monthly[months[i-1]];
+    const cur = monthly[months[i]];
+    if(!prev.twrIndexAll || !cur.twrIndexAll) continue;
+    const monthReturnPct = (cur.twrIndexAll/prev.twrIndexAll - 1);
+    const dollarPL = prev.totalUSD * monthReturnPct; // approx $ P/L for that month based on TWR return applied to start-of-month value
+    labels.push(months[i]);
+    values.push(cv(dollarPL));
+  }
+
+  destroyChart('c-monthlypl');
+  const ctx = document.getElementById('c-monthlypl').getContext('2d');
+  CHARTS['c-monthlypl'] = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets:[{data:values, backgroundColor:values.map(v=>v>=0?'#2a7a50':'#c44b3a'), borderWidth:0, borderRadius:3}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y>=0?'+':''}${fmt(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#6b8573', font:{size:9}, maxTicksLimit:8}, grid:{display:false}},
+               y:{ticks:{color:'#6b8573', font:{size:10}, callback:v=>fmt(v)}, grid:{color:'rgba(42,122,80,.06)'}}}}
+  });
+}
+
 
 function getGoals(){ try{ return JSON.parse(localStorage.getItem(GOALS_KEY)) || []; }catch(e){ return []; } }
 function saveGoals(g){ localStorage.setItem(GOALS_KEY, JSON.stringify(g)); }
@@ -1685,6 +1822,7 @@ async function runThesis(){
 
 function renderThesisResult(ticker, d){
   const convColor = d.conviction >= 80 ? 'pos' : d.conviction >= 60 ? 'neutral' : 'neg';
+  const HIGHLIGHT_NUMS = ['03','08','11']; // Moat, Risk Assessment, Conviction — most decision-critical
   let html = `
     <div class="thesis-header">
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
@@ -1705,42 +1843,53 @@ function renderThesisResult(ticker, d){
         </div>
       </div>
     </div>
-    <div class="thesis-grid">`;
+
+    <div class="dash-section pm-2">
+      <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> 14-Point Investment Framework</div>
+      <div class="thesis-grid">`;
   (d.thesis||[]).forEach(t=>{
-    html += `<div class="thesis-card">
-      <div class="thesis-card-num">${t.num} / 14</div>
+    const isHighlight = HIGHLIGHT_NUMS.includes(t.num);
+    html += `<div class="thesis-card ${isHighlight?'highlight':''}">
+      <div class="thesis-card-num">${t.num} / 14${isHighlight?' · สำคัญ':''}</div>
       <div class="thesis-card-title">${t.title}</div>
       <div class="thesis-card-body">${t.content}</div>
     </div>`;
   });
-  html += '</div>';
+  html += '</div></div>';
 
   if(d.priceTargets){
-    html += `<div class="dash-section-header" style="margin-top:24px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> ราคาเป้าหมาย (Price Target)</div>
-    <div class="grid-3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
-      <div class="card-sm" style="border-left:4px solid var(--emerald)"><div class="card-title" style="color:var(--emerald)">Bull Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bull||'—'}</div></div>
-      <div class="card-sm" style="border-left:4px solid var(--amber)"><div class="card-title" style="color:var(--amber)">Base Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.base||'—'}</div></div>
-      <div class="card-sm" style="border-left:4px solid var(--red)"><div class="card-title" style="color:var(--red)">Bear Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bear||'—'}</div></div>
+    html += `<div class="dash-section pm-3">
+      <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> ราคาเป้าหมาย (Price Target)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="card-sm" style="border-left:4px solid var(--emerald)"><div class="card-title" style="color:var(--emerald)">Bull Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bull||'—'}</div></div>
+        <div class="card-sm" style="border-left:4px solid var(--amber)"><div class="card-title" style="color:var(--amber)">Base Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.base||'—'}</div></div>
+        <div class="card-sm" style="border-left:4px solid var(--red)"><div class="card-title" style="color:var(--red)">Bear Case</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${d.priceTargets.bear||'—'}</div></div>
+      </div>
     </div>`;
   }
 
-  if(d.valuation){
-    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> เทียบ Valuation กับคู่แข่ง</div>
-    <div class="card-sm" style="margin-bottom:24px"><div style="font-size:13px;color:var(--text2);line-height:1.7">${d.valuation}</div></div>`;
-  }
-
-  if(d.catalysts && d.catalysts.length){
-    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Catalyst Calendar — เหตุการณ์ที่ต้องจับตา</div>
-    <div class="card-sm" style="margin-bottom:24px">
-      <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text2);line-height:2">
-        ${d.catalysts.map(c=>`<li>${c}</li>`).join('')}
-      </ul>
-    </div>`;
+  if(d.valuation || (d.catalysts && d.catalysts.length)){
+    html += `<div class="dash-section pm-4">`;
+    if(d.valuation){
+      html += `<div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg> เทียบ Valuation กับคู่แข่ง</div>
+      <div class="card-sm" style="margin-bottom:16px"><div style="font-size:13px;color:var(--text2);line-height:1.7">${d.valuation}</div></div>`;
+    }
+    if(d.catalysts && d.catalysts.length){
+      html += `<div class="card-title" style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Catalyst Calendar</div>
+      <div class="card-sm">
+        <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text2);line-height:2">
+          ${d.catalysts.map(c=>`<li>${c}</li>`).join('')}
+        </ul>
+      </div>`;
+    }
+    html += `</div>`;
   }
 
   if(d.bearCase){
-    html += `<div class="dash-section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> <span style="color:var(--red)">Bear Case — ถ้า Thesis นี้พัง</span></div>
-    <div class="card-sm" style="border:1px solid #f0c0b8;background:#fdf5f3"><div style="font-size:13px;color:var(--text1);line-height:1.7">${d.bearCase}</div></div>`;
+    html += `<div class="dash-section pm-5">
+      <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> Bear Case — ถ้า Thesis นี้พัง</div>
+      <div style="font-size:14px;color:var(--text1);line-height:1.8;font-weight:500">${d.bearCase}</div>
+    </div>`;
   }
 
   const el = document.getElementById('thesisResult');
@@ -1761,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     try{ RAW_DATA = JSON.parse(cached).data; renderTracker(); renderDashboard(); renderDecision(); renderAllocationPlanner(); }catch(e){}
   }
   if(growthCached){
-    try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); }catch(e){}
+    try{ GROWTH_DATA = JSON.parse(growthCached); renderGrowthControls(); renderGrowthChart(); renderBenchmarkChart(); renderYearlyStatsControls(); renderYearlyStats(); renderPerformanceSummary(); }catch(e){}
   }
   loadData();
 })();
