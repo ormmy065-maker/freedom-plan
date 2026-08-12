@@ -137,6 +137,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
 /* Portfolio Tracker — blue */
 .pt-1{border-color:#d0e0f5}.pt-1 .dash-section-header{background:#e3ecfa;color:#2d5fa8}
+.pt-2{border-color:#c2d8f2}.pt-2 .dash-section-header{background:#d4e4f7;color:#25508f}
 
 /* Dashboard — green shades (light to deeper) */
 .pd-1{border-color:#d6ecdf}.pd-1 .dash-section-header{background:#e8f5ee;color:#1f5e3c}
@@ -150,6 +151,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
 /* Decision Engine — amber */
 .pe-1{border-color:#f5ddc0}.pe-1 .dash-section-header{background:#fdf0e0;color:#8a5010}
+
+/* Tools Lab — each tool its own base color */
+.tl-alloc{border-color:#b8e0dc}.tl-alloc .dash-section-header{background:#d4f0ec;color:#0f6b60}
+.tl-alloc2{border-color:#c8e8e4}.tl-alloc2 .dash-section-header{background:#e0f5f2;color:#158073}
+.tl-entryexit{border-color:#f5c9d8}.tl-entryexit .dash-section-header{background:#fce0ea;color:#a8285c}
+.tl-sizer{border-color:#c8cdf0}.tl-sizer .dash-section-header{background:#e0e3fa;color:#3f3f9e}
+.tl-sizer2{border-color:#d8daf5}.tl-sizer2 .dash-section-header{background:#eaecfc;color:#4f4fb0}
 .thesis-header{background:var(--green-light);border:1px solid rgba(42,122,80,.15);border-radius:var(--r-lg);padding:20px;margin-bottom:20px}
 .thesis-ticker{font-size:28px;font-weight:600;color:var(--green2);letter-spacing:-1px}
 .thesis-company{font-size:14px;color:var(--text2);margin-top:2px}
@@ -290,6 +298,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           <div class="kpi"><div class="kpi-label">Positions</div><div class="kpi-value" id="kCount">—</div><div class="kpi-change neutral" id="kPorts">—</div></div>
         </div>
         <div class="tag-row" id="filterTags"></div>
+        <div id="tblBody_wrap">
         <div class="card">
           <table class="tbl">
             <thead><tr>
@@ -298,6 +307,39 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             </tr></thead>
             <tbody id="tblBody"></tbody>
           </table>
+        </div>
+        </div>
+      </div>
+
+      <div class="dash-section pt-2">
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> เพิ่มรายการซื้อขาย</div>
+        <div class="card-sub" style="margin-bottom:14px">รองรับหุ้น US ในพอร์ต Infinity/Nova/Spark/Victory ก่อน (Gold/Crypto/Fund เพิ่มทีหลัง) — บันทึกจริงเข้า Google Sheet</div>
+        <div id="txnFormArea">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div><label style="font-size:11px;color:var(--text3)">วันที่</label><br><input type="date" id="txnDate" style="width:150px"></div>
+            <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><input type="text" id="txnTicker" placeholder="เช่น NVDA" style="width:110px;text-transform:uppercase"></div>
+            <div><label style="font-size:11px;color:var(--text3)">Portfolio</label><br>
+              <select id="txnPortfolio" style="width:120px">
+                <option value="Infinity">Infinity</option>
+                <option value="Nova">Nova</option>
+                <option value="Spark">Spark</option>
+                <option value="Victory">Victory</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text3)">Action</label><br>
+              <select id="txnAction" style="width:100px">
+                <option value="BUY">BUY</option>
+                <option value="SELL">SELL</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text3)">ราคา/หุ้น ($)</label><br><input type="text" inputmode="decimal" id="txnPrice" placeholder="เช่น 208.50" style="width:120px"></div>
+            <div><label style="font-size:11px;color:var(--text3)">จำนวนหุ้น</label><br><input type="text" inputmode="decimal" id="txnUnits" placeholder="เช่น 0.5" style="width:110px"></div>
+            <div><label style="font-size:11px;color:var(--text3)">ยอดเงิน (THB)</label><br><input type="text" inputmode="decimal" id="txnAmountTHB" placeholder="เช่น 3500" style="width:120px"></div>
+          </div>
+          <div style="margin-top:12px">
+            <button onclick="previewTxn()" style="padding:9px 18px;background:#2d5fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer">ตรวจสอบก่อนบันทึก</button>
+          </div>
+          <div id="txnPreview" style="margin-top:14px"></div>
         </div>
       </div>
     </div>
@@ -415,8 +457,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             <div id="goalsList" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <select id="goalScope" style="width:auto;min-width:110px"></select>
-              <input type="number" id="goalAmount" placeholder="เป้าหมาย (THB)" style="width:130px">
-              <input type="number" id="goalYear" placeholder="ปี เช่น 2027" style="width:100px">
+              <input type="text" inputmode="numeric" id="goalAmount" placeholder="เป้าหมาย (THB) เช่น 500000" style="width:150px">
+              <input type="text" inputmode="numeric" id="goalYear" placeholder="ปี เช่น 2027" style="width:100px">
               <button class="btn-add-goal" onclick="addGoal()" style="padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer">+ เพิ่มเป้าหมาย</button>
             </div>
           </div>
@@ -473,23 +515,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div id="toolAllocation">
-        <div class="card-sm" style="margin-bottom:14px">
-          <div class="card-title">Allocation Planner</div>
-          <div class="card-sub">เช็คว่าแต่ละหุ้นถือมากเกินไปหรือน้อยเกินไปเมื่อเทียบกับ Target ที่ตั้งไว้</div>
-          <div class="tag-row" id="allocPortTags" style="margin-bottom:0"></div>
-        </div>
-        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
-          <table class="tbl">
-            <thead><tr>
-              <th>Ticker</th><th>Portfolio</th><th>Current %</th><th>Target %</th><th>Gap</th><th>สถานะ</th>
-            </tr></thead>
-            <tbody id="allocBody"></tbody>
-          </table>
+        <div class="dash-section tl-alloc">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Allocation Planner</div>
+          <div class="card-sub" style="margin-bottom:10px">เช็คว่าแต่ละหุ้นถือมากเกินไปหรือน้อยเกินไปเมื่อเทียบกับ Target ที่ตั้งไว้</div>
+          <div class="tag-row" id="allocPortTags" style="margin-bottom:10px"></div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="tbl">
+              <thead><tr>
+                <th>Ticker</th><th>Portfolio</th><th>Current %</th><th>Target %</th><th>Gap</th><th>สถานะ</th>
+              </tr></thead>
+              <tbody id="allocBody"></tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="card-sm">
-          <div class="card-title" style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text1)" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/></svg> Rebalance Calculator</div>
-          <div class="card-sub">เลือกโหมด: ปรับดู % เป้าหมาย หรือ ใส่จำนวนเงินที่จะเติม — คำนวณจากราคาจริงปัจจุบัน</div>
+        <div class="dash-section tl-alloc2">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg> Rebalance Calculator</div>
+          <div class="card-sub" style="margin-bottom:10px">เลือกโหมด: ปรับดู % เป้าหมาย หรือ ใส่จำนวนเงินที่จะเติม — คำนวณจากราคาจริงปัจจุบัน</div>
           <div class="tag-row" id="rebalModeTags" style="margin-bottom:12px">
             <button class="tag active" onclick="setRebalMode('pct', this)">ปรับดู % เป้าหมาย</button>
             <button class="tag" onclick="setRebalMode('amount', this)">ใส่จำนวนเงินที่จะเติม</button>
@@ -503,8 +545,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div id="toolEntryExit" style="display:none">
-        <div class="card-sm" style="margin-bottom:14px">
-          <div class="card-title">Entry &amp; Exit Lab</div>
+        <div class="dash-section tl-entryexit">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> Entry &amp; Exit Lab</div>
           <div class="card-sub">วางแผนจุดซื้อ จุดขาย และคำนวณ Risk/Reward ก่อนเปิด position</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
             <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="eeTicker" onchange="onEeTickerChange()" style="width:140px"></select></div>
@@ -517,8 +559,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             <button onclick="calcEntryExit()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer">คำนวณ</button>
           </div>
           <div id="eeCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+          <div id="eeResults" style="margin-top:14px"></div>
         </div>
-        <div id="eeResults"></div>
       </div>
 
       <div id="toolScenario" style="display:none">
@@ -558,8 +600,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
       </div>
 
       <div id="toolSizer" style="display:none">
-        <div class="card-sm" style="margin-bottom:14px">
-          <div class="card-title">Position Sizer</div>
+        <div class="dash-section tl-sizer">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Position Sizer</div>
           <div class="card-sub">Risk-Budget Position Sizing — คำนวณย้อนกลับจากความเสียหายที่ยอมรับได้ (จากหนังสือ Risk Management Playbook Part 3)</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
             <div><label style="font-size:11px;color:var(--text3)">Ticker</label><br><select id="psTicker" onchange="onPsTickerChange()" style="width:140px"></select></div>
@@ -574,12 +616,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
           </div>
           <div id="psHistDD" style="margin-top:8px"></div>
           <div id="psCurrentInfo" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+          <div id="psResults" style="margin-top:14px"></div>
         </div>
-        <div id="psResults"></div>
 
-        <div class="card-sm" style="margin-top:14px">
-          <div class="card-title">ตารางอ้างอิง: Asset Archetype Position Size</div>
-          <div class="card-sub">ช่วงขนาดที่แนะนำตามประเภทสินทรัพย์ (Illustrative — ปรับตามพอร์ตและเป้าหมายของแต่ละคน)</div>
+        <div class="dash-section tl-sizer2">
+          <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ตารางอ้างอิง: Asset Archetype Position Size</div>
+          <div class="card-sub" style="margin-bottom:10px">ช่วงขนาดที่แนะนำตามประเภทสินทรัพย์ (Illustrative — ปรับตามพอร์ตและเป้าหมายของแต่ละคน)</div>
           <div class="card" style="padding:0;overflow:hidden">
             <table class="tbl">
               <thead><tr><th>ประเภทสินทรัพย์</th><th>ไม้แรก</th><th>เต็มสูงสุด</th><th>ต้องเห็นอะไรก่อนเพิ่ม</th></tr></thead>
@@ -1159,15 +1201,23 @@ function saveGoals(g){ localStorage.setItem(GOALS_KEY, JSON.stringify(g)); }
 function populateGoalScopeOptions(){
   const sel = document.getElementById('goalScope');
   if(!sel || !RAW_DATA) return;
+  const prevValue = sel.value;
   const ports = [...new Set((RAW_DATA.holdings||[]).map(h=>h.portfolio))].filter(p=>p!=='Legacy');
   sel.innerHTML = '<option value="All">All Portfolios (รวม)</option>' + ports.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(prevValue && [...sel.options].some(o=>o.value===prevValue)) sel.value = prevValue;
 }
 
 function addGoal(){
-  const scope = document.getElementById('goalScope').value;
-  const amount = Number(document.getElementById('goalAmount').value);
-  const year = Number(document.getElementById('goalYear').value);
-  if(!amount || !year){ alert('กรอกเป้าหมาย (บาท) และปีให้ครบ'); return; }
+  const scopeEl = document.getElementById('goalScope');
+  const scope = (scopeEl && scopeEl.value) ? scopeEl.value : 'All';
+  const amountRaw = document.getElementById('goalAmount').value;
+  const yearRaw = document.getElementById('goalYear').value;
+  const amount = Number(String(amountRaw).replace(/[^0-9.]/g, ''));
+  const year = Number(String(yearRaw).replace(/[^0-9]/g, ''));
+  if(!amount || !year){
+    alert('กรอกเป้าหมาย (ตัวเลข เช่น 500000) และปี (เช่น 2027) ให้ครบทั้ง 2 ช่อง');
+    return;
+  }
   const goals = getGoals();
   goals.push({ id: Date.now(), scope, amountTHB: amount, year });
   saveGoals(goals);
@@ -1293,6 +1343,77 @@ function renderAllocationPlanner(){
   initRebalCalculator();
 }
 function setAllocFilter(p){ allocPortFilter = p; renderAllocationPlanner(); }
+
+// ---------- Add Transaction (2-step: preview then confirm) ----------
+function num(v){ return Number(String(v||'').replace(/[^0-9.\-]/g,'')); }
+
+function previewTxn(){
+  const date = document.getElementById('txnDate').value;
+  const ticker = document.getElementById('txnTicker').value.trim().toUpperCase();
+  const portfolio = document.getElementById('txnPortfolio').value;
+  const action = document.getElementById('txnAction').value;
+  const price = num(document.getElementById('txnPrice').value);
+  const units = num(document.getElementById('txnUnits').value);
+  const amountTHB = num(document.getElementById('txnAmountTHB').value);
+  const previewEl = document.getElementById('txnPreview');
+
+  if(!date || !ticker || !units){
+    previewEl.innerHTML = '<div class="banner banner-error" style="margin:0">กรอกอย่างน้อย วันที่ / Ticker / จำนวนหุ้น ให้ครบ</div>';
+    return;
+  }
+  const fx = RAW_DATA?.dashboard?.fxRateUSDTHB || 33.8;
+  const amountUSD = amountTHB ? round2(amountTHB/fx) : round2(price*units);
+  const finalAmountTHB = amountTHB || round2(amountUSD*fx);
+  const finalPrice = price || (units>0 ? round2(amountUSD/units) : 0);
+
+  window._pendingTxn = { date, assetType:'Stock', ticker, portfolio, action, price:finalPrice, currency:'USD', units, amountUSD, amountTHB:finalAmountTHB, note:'Added via web app' };
+
+  previewEl.innerHTML = `
+    <div class="banner banner-stale" style="margin:0 0 10px">ตรวจสอบข้อมูลก่อนบันทึกจริง — กดยืนยันเพื่อเขียนเข้า Google Sheet</div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+      <table class="tbl">
+        <tbody>
+          <tr><td style="font-weight:600">วันที่</td><td>${date}</td></tr>
+          <tr><td style="font-weight:600">Ticker</td><td>${ticker}</td></tr>
+          <tr><td style="font-weight:600">Portfolio</td><td>${portfolio}</td></tr>
+          <tr><td style="font-weight:600">Action</td><td>${action}</td></tr>
+          <tr><td style="font-weight:600">จำนวนหุ้น</td><td>${units}</td></tr>
+          <tr><td style="font-weight:600">ราคา/หุ้น</td><td>$${finalPrice.toFixed(2)}</td></tr>
+          <tr><td style="font-weight:600">ยอดเงิน</td><td>$${amountUSD.toFixed(2)} (≈฿${finalAmountTHB.toFixed(2)})</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button onclick="confirmTxn()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;margin-right:8px">✓ ยืนยันบันทึกจริง</button>
+    <button onclick="document.getElementById('txnPreview').innerHTML=''" style="padding:9px 18px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:var(--r-sm);font-size:13px;cursor:pointer">ยกเลิก แก้ไขใหม่</button>
+  `;
+}
+
+async function confirmTxn(){
+  const url = getUrl();
+  const previewEl = document.getElementById('txnPreview');
+  if(!url || !window._pendingTxn) return;
+  previewEl.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div><div style="font-size:12px;color:var(--text3);margin-top:8px">กำลังบันทึก...</div></div>';
+
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'}, // avoids CORS preflight to Apps Script
+      body: JSON.stringify(window._pendingTxn)
+    });
+    const data = await res.json();
+    if(data.success){
+      previewEl.innerHTML = '<div class="banner" style="margin:0;background:var(--green-light);color:var(--green2);border:1px solid rgba(42,122,80,.2)">✓ บันทึกสำเร็จ! ข้อมูลจะอัปเดตในไม่กี่วินาที</div>';
+      ['txnTicker','txnPrice','txnUnits','txnAmountTHB'].forEach(id=>document.getElementById(id).value='');
+      window._pendingTxn = null;
+      setTimeout(loadData, 2000);
+    } else {
+      previewEl.innerHTML = `<div class="banner banner-error" style="margin:0">บันทึกไม่สำเร็จ: ${data.error||'unknown error'}</div>`;
+    }
+  }catch(err){
+    previewEl.innerHTML = `<div class="banner banner-error" style="margin:0">เชื่อมต่อไม่สำเร็จ: ${err.message}</div>`;
+  }
+}
+
 
 // ---------- Position Sizer ----------
 const ASSET_ARCHETYPES = [
