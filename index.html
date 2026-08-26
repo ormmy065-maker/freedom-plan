@@ -57,6 +57,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 .section-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
 .kpi-label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .kpi-value{font-size:22px;font-weight:600;letter-spacing:-.5px}
@@ -498,27 +499,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <!-- ===== PAGE: DECISION ENGINE ===== -->
     <div class="page" id="page-decision">
       <div class="section-title">Decision Engine</div>
-      <div class="section-sub">Buy / Hold / Stop — ประเมินจาก zone ราคา และ status ที่ตั้งไว้ใน Decision_Rules</div>
-      <div class="dash-section pe-1">
-        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Decision Signals</div>
-        <div class="grid-4">
-          <div class="kpi"><div class="kpi-label">Buy Signals</div><div class="kpi-value pos" id="de-buy">—</div></div>
-          <div class="kpi"><div class="kpi-label">Hold</div><div class="kpi-value neutral" id="de-hold">—</div></div>
-          <div class="kpi"><div class="kpi-label">Stop / Watch</div><div class="kpi-value neg" id="de-stop">—</div></div>
-          <div class="kpi"><div class="kpi-label">In Buy Zone (Z1-Z3)</div><div class="kpi-value" id="de-zone">—</div></div>
-        </div>
-        <div class="tag-row" id="decisionTags">
-          <button class="tag active" onclick="filterDecision('all',this)">All</button>
-          <button class="tag" onclick="filterDecision('BUY',this)">Buy</button>
-          <button class="tag" onclick="filterDecision('HOLD',this)">Hold</button>
-          <button class="tag" onclick="filterDecision('STOP',this)">Stop / Watch</button>
-        </div>
-        <div id="decisionCards"></div>
-      </div>
+      <div class="section-sub">AI แนะนำจุดซื้อเพิ่ม/คงไว้/ขาย/stop สำหรับหุ้นที่ถืออยู่ และจุดเข้าไม้แรกสำหรับ watchlist</div>
 
       <div class="dash-section pe-2">
-        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg> AI Decision Engine</div>
-        <div class="card-sub" style="margin-bottom:14px">AI แนะนำจุดซื้อเพิ่ม/คงไว้/ขาย/stop สำหรับหุ้นที่ถืออยู่ และจุดเข้าไม้แรกสำหรับ watchlist — อ้างอิงข้อมูลราคาจริง (Yahoo Finance), ข่าวล่าสุด (Google News) และกรอบ Technical 101 for Thinkers · RELOADED</div>
+        <div class="grid-3" style="margin-bottom:14px">
+          <div class="kpi"><div class="kpi-label">Buy (หุ้นที่ถือ)</div><div class="kpi-value pos" id="de-buy">—</div></div>
+          <div class="kpi"><div class="kpi-label">Hold (หุ้นที่ถือ)</div><div class="kpi-value neutral" id="de-hold">—</div></div>
+          <div class="kpi"><div class="kpi-label">Sell / Stop (หุ้นที่ถือ)</div><div class="kpi-value neg" id="de-stop">—</div></div>
+        </div>
+        <div class="card-sub" style="margin-bottom:14px">อ้างอิงข้อมูลราคาจริง (Yahoo Finance), ข่าวล่าสุด (Google News) และกรอบ Technical 101 for Thinkers · RELOADED</div>
 
         <div id="deAiSetupBox" style="display:none;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px">
           <div style="font-size:14px;font-weight:500;margin-bottom:6px">ยังไม่ได้ตั้งค่า AI Worker URL</div>
@@ -530,7 +519,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             <button class="tag active" onclick="setDecisionEngineTab('held',this)">หุ้นที่ถืออยู่</button>
             <button class="tag" onclick="setDecisionEngineTab('watch',this)">Watchlist</button>
           </div>
-          <div id="deHeldWrap"><div id="deHeldCards"></div></div>
+          <div id="deHeldWrap">
+            <div class="tag-row" id="dePortfolioTags">
+              <button class="tag active" onclick="setHeldPortfolioFilter('all',this)">All</button>
+              <button class="tag" onclick="setHeldPortfolioFilter('Infinity',this)">Infinity</button>
+              <button class="tag" onclick="setHeldPortfolioFilter('Nova',this)">Nova</button>
+              <button class="tag" onclick="setHeldPortfolioFilter('Spark',this)">Spark</button>
+              <button class="tag" onclick="setHeldPortfolioFilter('Victory',this)">Victory</button>
+            </div>
+            <div style="display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap;align-items:center">
+              <input type="text" id="deHeldTickerInput" placeholder="ticker เช่น VRT" style="width:110px;height:40px;font-size:13px">
+              <select id="deHeldPortfolioInput" style="height:40px;font-size:13px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text1);padding:0 8px">
+                <option value="Infinity">Infinity</option>
+                <option value="Nova">Nova</option>
+                <option value="Spark">Spark</option>
+                <option value="Victory">Victory</option>
+              </select>
+              <input type="text" id="deHeldCostInput" placeholder="ต้นทุนเฉลี่ย (USD, ไม่บังคับ)" style="width:190px;height:40px;font-size:13px">
+              <button class="btn-primary" onclick="addManualHolding()" style="height:40px;padding:0 18px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">+ เพิ่มหุ้นที่ถืออยู่</button>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:10px">ใช้เพิ่มหุ้นที่ซื้อ/ขายจริงแล้วแต่ยังไม่อัปเดตใน Google Sheet — เก็บเฉพาะในเบราว์เซอร์นี้ ไม่กระทบข้อมูลจริงใน Sheet ถ้าอยากให้นับรวมถาวร ต้องไปบันทึก transaction ใน Sheet ด้วย</div>
+            <div id="deHeldCards"></div>
+          </div>
           <div id="deWatchWrap" style="display:none">
             <div style="display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap;align-items:center">
               <input type="text" id="deWatchInput" placeholder="พิมพ์ ticker เพื่อเพิ่มเข้า watchlist เช่น AMD" style="flex:1;min-width:180px;height:40px;font-size:13px">
@@ -955,7 +965,7 @@ function drawBar(canvasId, items, key){
   });
 }
 
-let decisionFilter = 'all';
+let heldPortfolioFilter = 'all';
 let GROWTH_DATA = null;
 let growthPortFilter = 'all';
 let growthPeriod = '6M';
@@ -1258,6 +1268,7 @@ function renderMonthlyPLChart(){
 }
 
 
+const GOALS_KEY = 'ormmy_investment_goals';
 function getGoals(){ try{ return JSON.parse(localStorage.getItem(GOALS_KEY)) || []; }catch(e){ return []; } }
 function saveGoals(g){ localStorage.setItem(GOALS_KEY, JSON.stringify(g)); }
 
@@ -1921,77 +1932,16 @@ function calcEntryExit(){
   `;
 }
 
-function filterDecision(f, btn){
-  decisionFilter = f;
-  document.querySelectorAll('#decisionTags .tag').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  renderDecision();
-}
-
 function renderDecision(){
-  if(!RAW_DATA || !RAW_DATA.decisions) return;
-  const all = RAW_DATA.decisions;
-  const buys = all.filter(d=>d.action.includes('BUY')).length;
-  const holds = all.filter(d=>d.action==='HOLD').length;
-  const stops = all.filter(d=>d.action==='STOP').length;
-  const inZone = all.filter(d=>d.zone && d.zone!=='NO').length;
+  if(!RAW_DATA) return;
+  const heldTickers = new Set(getHeldTickers().map(h=>h.ticker));
+  const heldDecisions = (RAW_DATA.decisions||[]).filter(d=>heldTickers.has(d.ticker));
+  const buys = heldDecisions.filter(d=>d.action && d.action.includes('BUY')).length;
+  const holds = heldDecisions.filter(d=>d.action==='HOLD').length;
+  const stops = heldDecisions.filter(d=>d.action && (d.action==='STOP'||d.action.includes('SELL'))).length;
   document.getElementById('de-buy').textContent = buys;
   document.getElementById('de-hold').textContent = holds;
   document.getElementById('de-stop').textContent = stops;
-  document.getElementById('de-zone').textContent = inZone;
-
-  const data = decisionFilter==='all' ? all :
-    decisionFilter==='BUY' ? all.filter(d=>d.action.includes('BUY')) :
-    decisionFilter==='HOLD' ? all.filter(d=>d.action==='HOLD') :
-    all.filter(d=>d.action==='STOP');
-
-  const container = document.getElementById('decisionCards');
-  if(!data.length){ container.innerHTML = '<div class="empty">ไม่มีรายการในกลุ่มนี้</div>'; return; }
-
-  container.innerHTML = data.map(d=>{
-    const isBuy = d.action.includes('BUY');
-    const isHold = d.action==='HOLD';
-    const actionClass = isBuy ? 'action-buy' : isHold ? 'action-hold' : 'action-stop';
-    const ringClass = isBuy ? 'ring-green' : isHold ? 'ring-yellow' : 'ring-red';
-    const ringLabel = isBuy ? '▲' : isHold ? '●' : '▼';
-    const actionIcon = isBuy ? '▲ ' : isHold ? '● ' : '▼ ';
-    const healthColor = d.status==='GREEN' ? 'var(--emerald)' : d.status==='RED' ? 'var(--red)' : 'var(--amber)';
-    const metricsBadge = d.metricsStatus==='GOOD' ? 'badge-good' : d.metricsStatus==='WEAK' ? 'badge-weak' : 'badge-bad';
-    const riskBadge = d.invalidationRisk==='LOW' ? 'badge-good' : d.invalidationRisk==='MEDIUM' ? 'badge-weak' : 'badge-bad';
-    const priceCur = currentCurrency==='USD' ? d.price : d.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-    const zoneChip = (key, label, range) => {
-      if(range[0]==null || range[1]==null) return '';
-      const isCurrent = d.zone === key;
-      const lo = currentCurrency==='USD'?range[0]:range[0]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-      const hi = currentCurrency==='USD'?range[1]:range[1]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-      return `<span class="zone-chip ${isCurrent?'current':''}"><span class="zlabel">${label}</span>${fmt(Math.min(lo,hi))}–${fmt(Math.max(lo,hi))}</span>`;
-    };
-    return `<div class="dc-card">
-      <div class="dc-top">
-        <div class="score-ring ${ringClass}" title="Action: ${d.action}">${ringLabel}</div>
-        <div class="dc-title">
-          <div class="dc-ticker">${d.ticker} <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${healthColor};vertical-align:middle" title="Health: ${d.status}"></span></div>
-          <div class="dc-sub">
-            <span class="badge ${metricsBadge}">Metrics: ${d.metricsStatus}</span>
-            <span class="badge ${riskBadge}">Risk: ${d.invalidationRisk}</span>
-          </div>
-        </div>
-        <div class="dc-price-block">
-          <div class="dc-price-val">${fmt(priceCur)}</div>
-          <div class="dc-action ${actionClass}">${actionIcon}${d.action}</div>
-        </div>
-      </div>
-      <div class="dc-zones">
-        ${zoneChip('Z1','Z1',d.zones?.z1||[])}
-        ${zoneChip('Z2','Z2',d.zones?.z2||[])}
-        ${zoneChip('Z3','Z3',d.zones?.z3||[])}
-      </div>
-      <div class="dc-detail">
-        <b>Thesis:</b> ${d.thesis} &nbsp;·&nbsp; <b>Key metrics:</b> ${d.keyMetrics}
-        ${d.invalidation ? ` &nbsp;·&nbsp; <b>Invalidation:</b> ${d.invalidation}` : ''}
-      </div>
-    </div>`;
-  }).join('');
 
   renderHeldCards();
 }
@@ -2156,6 +2106,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 // ---------- AI Decision Engine (held stocks + watchlist) ----------
 const WATCHLIST_KEY = 'ormmy_watchlist';
+const MANUAL_HOLDINGS_KEY = 'ormmy_manual_holdings';
 const decisionAiCache = {}; // ticker -> {isHeld, data} for this session
 
 function getWatchlist(){
@@ -2177,12 +2128,42 @@ function removeWatchlistTicker(t){
   renderWatchCards();
 }
 
+function getManualHoldings(){
+  try{ return JSON.parse(localStorage.getItem(MANUAL_HOLDINGS_KEY) || '[]'); }catch(e){ return []; }
+}
+function saveManualHoldings(list){ localStorage.setItem(MANUAL_HOLDINGS_KEY, JSON.stringify(list)); }
+function addManualHolding(){
+  const tInp = document.getElementById('deHeldTickerInput');
+  const pInp = document.getElementById('deHeldPortfolioInput');
+  const cInp = document.getElementById('deHeldCostInput');
+  const ticker = (tInp.value || '').trim().toUpperCase();
+  if(!ticker) return;
+  const portfolio = pInp.value;
+  const avgCostUSD = parseFloat(cInp.value) || null;
+  const list = getManualHoldings().filter(x=>x.ticker!==ticker);
+  list.push({ ticker, portfolio, avgCostUSD, addedAt: new Date().toISOString() });
+  saveManualHoldings(list);
+  tInp.value=''; cInp.value='';
+  renderHeldCards();
+}
+function removeManualHolding(ticker){
+  saveManualHoldings(getManualHoldings().filter(x=>x.ticker!==ticker));
+  renderHeldCards();
+}
+
 function setDecisionEngineTab(tab, btnEl){
   document.querySelectorAll('#deTabs .tag').forEach(b=>b.classList.remove('active'));
   if(btnEl) btnEl.classList.add('active');
   document.getElementById('deHeldWrap').style.display = tab==='held' ? 'block' : 'none';
   document.getElementById('deWatchWrap').style.display = tab==='watch' ? 'block' : 'none';
   if(tab==='held') renderHeldCards(); else renderWatchCards();
+}
+
+function setHeldPortfolioFilter(p, btnEl){
+  heldPortfolioFilter = p;
+  document.querySelectorAll('#dePortfolioTags .tag').forEach(b=>b.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  renderHeldCards();
 }
 
 function checkDeAiSetup(){
@@ -2194,18 +2175,24 @@ function checkDeAiSetup(){
 function getHeldTickers(){
   const holdings = (RAW_DATA && RAW_DATA.holdings || []).filter(h=>['Infinity','Nova','Spark','Victory'].includes(h.portfolio) && h.marketValueUSD>0);
   const map = {};
-  holdings.forEach(h=>{ if(!map[h.ticker]) map[h.ticker]=h; });
+  holdings.forEach(h=>{ if(!map[h.ticker]) map[h.ticker]={...h, isManual:false}; });
+  getManualHoldings().forEach(m=>{
+    if(!map[m.ticker]) map[m.ticker] = { ticker:m.ticker, portfolio:m.portfolio, avgCostUSD:m.avgCostUSD||0, price:0, targetPct:null, marketValueUSD:0, isManual:true };
+  });
   return Object.values(map);
 }
 
-function deCardSkeleton(ticker, subtitle){
+function deCardSkeleton(ticker, subtitle, isHeld, isManual){
   return `<div class="dc-card" id="deCard-${ticker}">
     <div class="dc-top">
       <div class="dc-title">
         <div class="dc-ticker">${ticker}</div>
         <div class="dc-sub" style="color:var(--text3);font-size:12px">${subtitle||''}</div>
       </div>
-      <button class="btn-primary" onclick="runDecisionAI('${ticker}', ${subtitle && subtitle.includes('ถืออยู่') ? 'true':'false'})" style="height:36px;padding:0 16px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">🧠 วิเคราะห์ด้วย AI</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${isManual ? `<button onclick="removeManualHolding('${ticker}')" title="ลบออก" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px">✕</button>` : ''}
+        <button class="btn-primary" onclick="runDecisionAI('${ticker}', ${isHeld?'true':'false'})" style="height:36px;padding:0 16px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">🧠 วิเคราะห์ด้วย AI</button>
+      </div>
     </div>
     <div class="dc-detail" id="deResult-${ticker}"></div>
   </div>`;
@@ -2213,13 +2200,16 @@ function deCardSkeleton(ticker, subtitle){
 
 function renderHeldCards(){
   checkDeAiSetup();
-  const held = getHeldTickers();
+  let held = getHeldTickers();
+  if(heldPortfolioFilter!=='all') held = held.filter(h=>h.portfolio===heldPortfolioFilter);
   const container = document.getElementById('deHeldCards');
-  if(!held.length){ container.innerHTML = '<div class="empty">ยังไม่มีข้อมูล holdings — โหลดข้อมูล Portfolio Tracker ก่อน</div>'; return; }
+  if(!held.length){ container.innerHTML = '<div class="empty">ไม่มีหุ้นในกลุ่มนี้</div>'; return; }
   container.innerHTML = held.map(h=>{
-    const priceCur = currentCurrency==='USD' ? h.price : h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-    const sub = `${h.portfolio} · ถืออยู่ · ราคาปัจจุบัน ${fmt(priceCur)} · ต้นทุนเฉลี่ย ${fmt(h.avgCostUSD)} · target ${h.targetPct?h.targetPct.toFixed(1)+'%':'—'}`;
-    return deCardSkeleton(h.ticker, sub);
+    const priceCur = h.price ? (currentCurrency==='USD' ? h.price : h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1)) : null;
+    const sub = h.isManual
+      ? `${h.portfolio} · เพิ่มเอง (manual) ${h.avgCostUSD?'· ต้นทุนเฉลี่ย '+fmt(h.avgCostUSD):''}`
+      : `${h.portfolio} · ถืออยู่ · ราคาปัจจุบัน ${fmt(priceCur)} · ต้นทุนเฉลี่ย ${fmt(h.avgCostUSD)} · target ${h.targetPct?h.targetPct.toFixed(1)+'%':'—'}`;
+    return deCardSkeleton(h.ticker, sub, true, h.isManual);
   }).join('');
 }
 
@@ -2230,7 +2220,7 @@ function renderWatchCards(){
   if(!list.length){ container.innerHTML = '<div class="empty">ยังไม่มีหุ้นใน watchlist — เพิ่ม ticker ด้านบน</div>'; return; }
   container.innerHTML = list.map(t=>{
     const sub = `Watchlist · ยังไม่ถือ`;
-    return `<div style="position:relative">${deCardSkeleton(t, sub)}<button onclick="removeWatchlistTicker('${t}')" title="ลบออกจาก watchlist" style="position:absolute;top:14px;right:170px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button></div>`;
+    return `<div style="position:relative">${deCardSkeleton(t, sub, false, false)}<button onclick="removeWatchlistTicker('${t}')" title="ลบออกจาก watchlist" style="position:absolute;top:14px;right:170px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button></div>`;
   }).join('');
 }
 
@@ -2241,10 +2231,10 @@ async function runDecisionAI(ticker, isHeld){
   if(!resultEl) return;
   resultEl.innerHTML = `<div style="padding:16px 0;color:var(--text3);font-size:13px">🧠 กำลังดึงราคาจริง คำนวณ technical indicators และวิเคราะห์... (20-40 วินาที)</div>`;
 
-  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker);
+  const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker) || getManualHoldings().find(x=>x.ticker===ticker);
   const dec = (RAW_DATA.decisions||[]).find(x=>x.ticker===ticker);
   const portfolioContext = h
-    ? `Held in ${h.portfolio} portfolio. Current price: $${h.price}, avg cost: $${h.avgCostUSD.toFixed(2)}, weight target: ${h.targetPct}%.`
+    ? `Held in ${h.portfolio} portfolio. ${h.price?('Current price: $'+h.price+', '):''}avg cost: $${(h.avgCostUSD||0).toFixed(2)}${h.targetPct?(', weight target: '+h.targetPct+'%'):''}.`
     : `Not currently held — evaluating for watchlist / potential entry.`;
   const decisionContext = dec ? `Existing sheet-based decision status: ${dec.action}. Zone: ${dec.zone}. Thesis note: ${dec.thesis}` : '';
 
