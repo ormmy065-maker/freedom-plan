@@ -2477,7 +2477,7 @@ async function fetchNewsData(ticker){
 async function runNewsForTicker(ticker){
   const el = document.getElementById(`deNewsResult-${ticker}`);
   if(!el) return;
-  el.innerHTML = `<div style="padding:12px 0;color:var(--text3);font-size:13px">📰 กำลังดึงข่าวและข้อมูลงบ...</div>`;
+  el.innerHTML = `<div style="padding:12px 0;color:var(--text3);font-size:13px">📰 กำลังดึงข่าวและข้อมูลงบจริง แล้วให้ AI วิเคราะห์... (5-15 วินาที)</div>`;
   try{
     const data = await fetchNewsData(ticker);
     renderNewsResult(el, data);
@@ -2549,6 +2549,12 @@ function renderNewsResult(el, data){
     const dbg = data._debug && data._debug.news;
     html += `<div style="font-size:12px;color:var(--text3)">ไม่พบข่าวล่าสุด
       ${dbg ? `<details style="margin-top:4px"><summary style="cursor:pointer;font-size:11px">รายละเอียด (debug)</summary><pre style="white-space:pre-wrap;font-size:10px;background:var(--surface2,#f5f5f5);padding:6px;border-radius:6px;margin-top:4px">${JSON.stringify(dbg,null,2).replace(/</g,'&lt;')}</pre></details>` : ''}
+    </div>`;
+  }
+  if(data.aiInsight){
+    html += `<div style="margin-top:10px;padding:10px;background:var(--surface2,#f7f5fb);border-left:3px solid #6b3fa8;border-radius:6px">
+      <div style="font-size:11px;font-weight:600;color:#6b3fa8;margin-bottom:4px">🤖 AI วิเคราะห์ (จากข้อมูลจริงด้านบนเท่านั้น)</div>
+      <div style="font-size:12px;line-height:1.6">${data.aiInsight.replace(/\n/g,'<br>')}</div>
     </div>`;
   }
   html += `<div style="font-size:10px;color:var(--text3);margin-top:8px">แหล่งข้อมูล: Yahoo Finance + Google News · ดึงเมื่อ ${data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('th-TH') : '—'}</div>`;
