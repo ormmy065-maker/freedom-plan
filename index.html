@@ -538,7 +538,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
               <input type="text" id="deHeldCostInput" placeholder="ต้นทุนเฉลี่ย (USD, ไม่บังคับ)" style="width:190px;height:40px;font-size:13px">
               <button class="btn-primary" onclick="addManualHolding()" style="height:40px;padding:0 18px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">+ เพิ่มหุ้นที่ถืออยู่</button>
             </div>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:10px">ใช้เพิ่มหุ้นที่ซื้อ/ขายจริงแล้วแต่ยังไม่อัปเดตใน Google Sheet — เก็บเฉพาะในเบราว์เซอร์นี้ ไม่กระทบข้อมูลจริงใน Sheet ถ้าอยากให้นับรวมถาวร ต้องไปบันทึก transaction ใน Sheet ด้วย</div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:14px">ใช้เพิ่มหุ้นที่ซื้อ/ขายจริงแล้วแต่ยังไม่อัปเดตใน Google Sheet — เก็บเฉพาะในเบราว์เซอร์นี้ ไม่กระทบข้อมูลจริงใน Sheet ถ้าอยากให้นับรวมถาวร ต้องไปบันทึก transaction ใน Sheet ด้วย</div>
+
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+              <button class="btn-primary" onclick="runDecisionAIBatch()" id="deBatchBtn" style="height:40px;padding:0 18px;background:#6b3fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">🧠 วิเคราะห์ทั้งหมดด้วย AI</button>
+              <span id="deBatchProgress" style="font-size:12px;color:var(--text3)"></span>
+            </div>
+            <div id="deBatchSummary"></div>
             <div id="deHeldCards"></div>
           </div>
           <div id="deWatchWrap" style="display:none">
@@ -549,6 +555,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
             <div id="deWatchCards"></div>
           </div>
         </div>
+      </div>
+
+      <div class="dash-section pe-3">
+        <div class="dash-section-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg> ข่าว &amp; งบไตรมาส</div>
+        <div class="card-sub" style="margin-bottom:14px">อัปเดตข่าว อินไซต์ และผลประกอบการล่าสุด สำหรับหุ้นที่ถืออยู่และ Watchlist — ดึงตรงจาก Yahoo Finance และ Google News (ไม่ผ่าน AI สังเคราะห์ จึงเป็นข้อมูลจริงล้วนๆ)</div>
+        <div class="tag-row" id="deNewsTabs">
+          <button class="tag active" onclick="setNewsTab('held',this)">หุ้นที่ถืออยู่</button>
+          <button class="tag" onclick="setNewsTab('watch',this)">Watchlist</button>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin:10px 0 14px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="runNewsBatch()" id="deNewsBatchBtn" style="height:40px;padding:0 18px;background:#2d6fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">📰 ดึงข่าว &amp; งบทั้งหมด</button>
+          <span id="deNewsBatchProgress" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+        <div id="deNewsHeldWrap"><div id="deNewsHeldCards"></div></div>
+        <div id="deNewsWatchWrap" style="display:none"><div id="deNewsWatchCards"></div></div>
       </div>
     </div>
 
@@ -1944,6 +1965,7 @@ function renderDecision(){
   document.getElementById('de-stop').textContent = stops;
 
   renderHeldCards();
+  if(typeof newsTab!=='undefined'){ if(newsTab==='held') renderNewsHeldCards(); else renderNewsWatchCards(); }
 }
 
 
@@ -2224,13 +2246,9 @@ function renderWatchCards(){
   }).join('');
 }
 
-async function runDecisionAI(ticker, isHeld){
+async function fetchDecisionData(ticker, isHeld){
   const url = getAiUrl();
-  if(!url){ checkDeAiSetup(); return; }
-  const resultEl = document.getElementById(`deResult-${ticker}`);
-  if(!resultEl) return;
-  resultEl.innerHTML = `<div style="padding:16px 0;color:var(--text3);font-size:13px">🧠 กำลังดึงราคาจริง คำนวณ technical indicators และวิเคราะห์... (20-40 วินาที)</div>`;
-
+  if(!url) throw new Error('ยังไม่ได้ตั้งค่า AI Worker URL');
   const h = (RAW_DATA.holdings||[]).find(x=>x.ticker===ticker) || getManualHoldings().find(x=>x.ticker===ticker);
   const dec = (RAW_DATA.decisions||[]).find(x=>x.ticker===ticker);
   const portfolioContext = h
@@ -2238,22 +2256,83 @@ async function runDecisionAI(ticker, isHeld){
     : `Not currently held — evaluating for watchlist / potential entry.`;
   const decisionContext = dec ? `Existing sheet-based decision status: ${dec.action}. Zone: ${dec.zone}. Thesis note: ${dec.thesis}` : '';
 
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ mode:'decision', ticker, isHeld, portfolioContext, decisionContext })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  decisionAiCache[ticker] = { isHeld, data };
+  return data;
+}
+
+async function runDecisionAI(ticker, isHeld){
+  const url = getAiUrl();
+  if(!url){ checkDeAiSetup(); return; }
+  const resultEl = document.getElementById(`deResult-${ticker}`);
+  if(!resultEl) return;
+  resultEl.innerHTML = `<div style="padding:16px 0;color:var(--text3);font-size:13px">🧠 กำลังดึงราคาจริง คำนวณ technical indicators และวิเคราะห์... (20-40 วินาที)</div>`;
   try{
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ mode:'decision', ticker, isHeld, portfolioContext, decisionContext })
-    });
-    const data = await res.json();
-    if(data.error){
-      resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">วิเคราะห์ไม่สำเร็จ: ${data.error}</div>`;
-      return;
-    }
-    decisionAiCache[ticker] = { isHeld, data };
+    const data = await fetchDecisionData(ticker, isHeld);
     renderDecisionResult(resultEl, data, isHeld);
   }catch(err){
-    resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">เชื่อมต่อ AI Worker ไม่สำเร็จ: ${err.message}</div>`;
+    resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">วิเคราะห์ไม่สำเร็จ: ${err.message}</div>`;
   }
+}
+
+async function runDecisionAIBatch(){
+  const url = getAiUrl();
+  if(!url){ checkDeAiSetup(); return; }
+  let held = getHeldTickers();
+  if(heldPortfolioFilter!=='all') held = held.filter(h=>h.portfolio===heldPortfolioFilter);
+  if(!held.length) return;
+
+  const btn = document.getElementById('deBatchBtn');
+  const progressEl = document.getElementById('deBatchProgress');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  const results = [];
+
+  for(let i=0;i<held.length;i++){
+    const ticker = held[i].ticker;
+    progressEl.textContent = `กำลังวิเคราะห์ ${i+1}/${held.length}: ${ticker}...`;
+    try{
+      const data = await fetchDecisionData(ticker, true);
+      results.push({ ticker, data, ok:true });
+      const resultEl = document.getElementById(`deResult-${ticker}`);
+      if(resultEl) renderDecisionResult(resultEl, data, true);
+    }catch(err){
+      results.push({ ticker, error: err.message, ok:false });
+    }
+    renderBatchSummary(results, held.length);
+  }
+  progressEl.textContent = `เสร็จแล้ว — วิเคราะห์ ${results.filter(r=>r.ok).length}/${held.length} ตัวสำเร็จ`;
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function renderBatchSummary(results, total){
+  const el = document.getElementById('deBatchSummary');
+  if(!el) return;
+  const buckets = { 'ซื้อเพิ่ม': [], 'คงไว้': [], 'ขาย/Stop': [] };
+  results.filter(r=>r.ok).forEach(r=>{
+    const action = r.data.action || '';
+    const bucket = action.includes('BUY') ? 'ซื้อเพิ่ม' : action==='HOLD' ? 'คงไว้' : 'ขาย/Stop';
+    buckets[bucket].push(r);
+  });
+  const failed = results.filter(r=>!r.ok);
+
+  const bucketColor = { 'ซื้อเพิ่ม':'var(--green)', 'คงไว้':'var(--amber)', 'ขาย/Stop':'var(--red)' };
+  el.innerHTML = `<div class="dc-card" style="margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">สรุปผลวิเคราะห์ (${results.length}/${total})</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+      ${Object.entries(buckets).map(([name,items])=>`
+        <div>
+          <div style="font-size:12px;font-weight:600;color:${bucketColor[name]};margin-bottom:6px">${name} (${items.length})</div>
+          ${items.map(r=>`<div style="font-size:12px;margin-bottom:3px;cursor:pointer" onclick="document.getElementById('deCard-${r.ticker}')?.scrollIntoView({behavior:'smooth',block:'center'})"><b>${r.ticker}</b> <span style="color:var(--text3)">conviction ${r.data.conviction??'—'}</span></div>`).join('') || '<div style="font-size:11px;color:var(--text3)">—</div>'}
+        </div>`).join('')}
+    </div>
+    ${failed.length ? `<div style="margin-top:10px;font-size:11px;color:var(--red)">วิเคราะห์ไม่สำเร็จ ${failed.length} ตัว: ${failed.map(f=>f.ticker).join(', ')}</div>` : ''}
+  </div>`;
 }
 
 function actionBadgeClass(action){
@@ -2302,6 +2381,136 @@ function renderDecisionResult(el, d, isHeld){
   html += `</div>`;
   el.innerHTML = html;
 }
+
+// ---------- News & Earnings (pure data — no AI, straight from Yahoo Finance + Google News) ----------
+let newsTab = 'held';
+const newsCache = {}; // ticker -> {news, earnings, fetchedAt}
+
+function setNewsTab(tab, btnEl){
+  newsTab = tab;
+  document.querySelectorAll('#deNewsTabs .tag').forEach(b=>b.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  document.getElementById('deNewsHeldWrap').style.display = tab==='held' ? 'block' : 'none';
+  document.getElementById('deNewsWatchWrap').style.display = tab==='watch' ? 'block' : 'none';
+  if(tab==='held') renderNewsHeldCards(); else renderNewsWatchCards();
+}
+
+function newsCardSkeleton(ticker){
+  return `<div class="dc-card" id="deNewsCard-${ticker}">
+    <div class="dc-top">
+      <div class="dc-title"><div class="dc-ticker">${ticker}</div></div>
+      <button class="btn-primary" onclick="runNewsForTicker('${ticker}')" style="height:36px;padding:0 16px;background:#2d6fa8;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;cursor:pointer;white-space:nowrap">📰 ดึงข่าว &amp; งบ</button>
+    </div>
+    <div class="dc-detail" id="deNewsResult-${ticker}"></div>
+  </div>`;
+}
+
+function renderNewsHeldCards(){
+  let held = getHeldTickers();
+  if(heldPortfolioFilter!=='all') held = held.filter(h=>h.portfolio===heldPortfolioFilter);
+  const container = document.getElementById('deNewsHeldCards');
+  if(!held.length){ container.innerHTML = '<div class="empty">ไม่มีหุ้นในกลุ่มนี้</div>'; return; }
+  container.innerHTML = held.map(h=>newsCardSkeleton(h.ticker)).join('');
+  held.forEach(h=>{ if(newsCache[h.ticker]) renderNewsResult(document.getElementById(`deNewsResult-${h.ticker}`), newsCache[h.ticker]); });
+}
+function renderNewsWatchCards(){
+  const list = getWatchlist();
+  const container = document.getElementById('deNewsWatchCards');
+  if(!list.length){ container.innerHTML = '<div class="empty">ยังไม่มีหุ้นใน watchlist</div>'; return; }
+  container.innerHTML = list.map(t=>newsCardSkeleton(t)).join('');
+  list.forEach(t=>{ if(newsCache[t]) renderNewsResult(document.getElementById(`deNewsResult-${t}`), newsCache[t]); });
+}
+
+async function fetchNewsData(ticker){
+  const url = getAiUrl();
+  if(!url) throw new Error('ยังไม่ได้ตั้งค่า AI Worker URL');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ mode:'news', ticker })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  newsCache[ticker] = data;
+  return data;
+}
+
+async function runNewsForTicker(ticker){
+  const el = document.getElementById(`deNewsResult-${ticker}`);
+  if(!el) return;
+  el.innerHTML = `<div style="padding:12px 0;color:var(--text3);font-size:13px">📰 กำลังดึงข่าวและข้อมูลงบ...</div>`;
+  try{
+    const data = await fetchNewsData(ticker);
+    renderNewsResult(el, data);
+  }catch(err){
+    el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">ดึงข้อมูลไม่สำเร็จ: ${err.message}</div>`;
+  }
+}
+
+async function runNewsBatch(){
+  const url = getAiUrl();
+  if(!url){ checkDeAiSetup(); return; }
+  const tickers = newsTab==='held'
+    ? (heldPortfolioFilter==='all' ? getHeldTickers() : getHeldTickers().filter(h=>h.portfolio===heldPortfolioFilter)).map(h=>h.ticker)
+    : getWatchlist();
+  if(!tickers.length) return;
+  const btn = document.getElementById('deNewsBatchBtn');
+  const progressEl = document.getElementById('deNewsBatchProgress');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  for(let i=0;i<tickers.length;i++){
+    const ticker = tickers[i];
+    progressEl.textContent = `กำลังดึง ${i+1}/${tickers.length}: ${ticker}...`;
+    try{
+      const data = await fetchNewsData(ticker);
+      const el = document.getElementById(`deNewsResult-${ticker}`);
+      if(el) renderNewsResult(el, data);
+    }catch(err){
+      const el = document.getElementById(`deNewsResult-${ticker}`);
+      if(el) el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">ดึงข้อมูลไม่สำเร็จ: ${err.message}</div>`;
+    }
+  }
+  progressEl.textContent = `เสร็จแล้ว — ดึงข้อมูล ${tickers.length} ตัว`;
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function renderNewsResult(el, data){
+  if(!el || !data) return;
+  const e = data.earnings;
+  let html = `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">`;
+
+  if(e && e.nextEarningsDate){
+    const soon = e.daysUntilEarnings!=null && e.daysUntilEarnings>=0 && e.daysUntilEarnings<=30;
+    html += `<div style="margin-bottom:8px">
+      <span class="badge ${soon?'badge-weak':'badge-good'}">🗓 ประกาศงบถัดไป: ${e.nextEarningsDate}${e.daysUntilEarnings!=null?` (อีก ${e.daysUntilEarnings} วัน)`:''}</span>
+    </div>`;
+  }
+  if(e && e.lastQuarter && (e.lastQuarter.epsActual!=null || e.lastQuarter.epsEstimate!=null)){
+    const beat = e.lastQuarter.surprisePct!=null ? e.lastQuarter.surprisePct>=0 : null;
+    html += `<div style="margin-bottom:8px;font-size:12px">
+      <b>งบไตรมาสล่าสุด${e.lastQuarter.period?' ('+e.lastQuarter.period+')':''}:</b>
+      EPS จริง ${e.lastQuarter.epsActual??'—'} vs คาด ${e.lastQuarter.epsEstimate??'—'}
+      ${e.lastQuarter.surprisePct!=null?`<span style="color:${beat?'var(--green)':'var(--red)'}">(${beat?'+':''}${e.lastQuarter.surprisePct}%)</span>`:''}
+    </div>`;
+  }
+  if(!e){
+    html += `<div style="font-size:12px;color:var(--text3);margin-bottom:8px">ไม่พบข้อมูลงบ/ปฏิทินประกาศผลสำหรับ ticker นี้จาก Yahoo Finance</div>`;
+  }
+
+  const news = data.news || [];
+  if(news.length){
+    html += `<div style="font-size:12px;font-weight:600;margin-bottom:4px">ข่าวล่าสุด:</div>`;
+    html += news.slice(0,5).map(n=>`<div style="font-size:12px;margin-bottom:4px">
+      ${n.link ? `<a href="${n.link}" target="_blank" rel="noopener" style="color:var(--text1);text-decoration:underline">${n.title}</a>` : n.title}
+      <span style="color:var(--text3);font-size:11px"> — ${n.source||''} ${n.pubDate?'· '+new Date(n.pubDate).toLocaleDateString('th-TH'):''}</span>
+    </div>`).join('');
+  } else {
+    html += `<div style="font-size:12px;color:var(--text3)">ไม่พบข่าวล่าสุด</div>`;
+  }
+  html += `<div style="font-size:10px;color:var(--text3);margin-top:8px">แหล่งข้อมูล: Yahoo Finance + Google News · ดึงเมื่อ ${data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('th-TH') : '—'}</div>`;
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
 
 
 (function(){
