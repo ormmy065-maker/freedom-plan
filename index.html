@@ -503,10 +503,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
       <div class="dash-section pe-2">
         <div class="grid-3" style="margin-bottom:14px">
-          <div class="kpi"><div class="kpi-label">Buy (หุ้นที่ถือ)</div><div class="kpi-value pos" id="de-buy">—</div></div>
-          <div class="kpi"><div class="kpi-label">Hold (หุ้นที่ถือ)</div><div class="kpi-value neutral" id="de-hold">—</div></div>
-          <div class="kpi"><div class="kpi-label">Sell / Stop (หุ้นที่ถือ)</div><div class="kpi-value neg" id="de-stop">—</div></div>
+          <div class="kpi" onclick="showDecisionBucket('BUY')" style="cursor:pointer" title="คลิกเพื่อดูรายชื่อหุ้น"><div class="kpi-label">Buy (หุ้นที่ถือ)</div><div class="kpi-value pos" id="de-buy">—</div></div>
+          <div class="kpi" onclick="showDecisionBucket('HOLD')" style="cursor:pointer" title="คลิกเพื่อดูรายชื่อหุ้น"><div class="kpi-label">Hold (หุ้นที่ถือ)</div><div class="kpi-value neutral" id="de-hold">—</div></div>
+          <div class="kpi" onclick="showDecisionBucket('STOP')" style="cursor:pointer" title="คลิกเพื่อดูรายชื่อหุ้น"><div class="kpi-label">Sell / Stop (หุ้นที่ถือ)</div><div class="kpi-value neg" id="de-stop">—</div></div>
         </div>
+        <div id="deBucketDetail" style="display:none;margin-top:12px"></div>
         <div class="card-sub" style="margin-bottom:14px">อ้างอิงข้อมูลราคาจริง (Yahoo Finance), ข่าวล่าสุด (Google News) และกรอบ Technical 101 for Thinkers · RELOADED</div>
 
         <div id="deAiSetupBox" style="display:none;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px">
@@ -1953,6 +1954,44 @@ function calcEntryExit(){
   `;
 }
 
+function showDecisionBucket(bucket){
+  const heldTickers = new Set(getHeldTickers().map(h=>h.ticker));
+  const heldDecisions = (RAW_DATA.decisions||[]).filter(d=>heldTickers.has(d.ticker));
+  let items;
+  if(bucket==='BUY') items = heldDecisions.filter(d=>d.action && d.action.includes('BUY'));
+  else if(bucket==='HOLD') items = heldDecisions.filter(d=>d.action==='HOLD');
+  else items = heldDecisions.filter(d=>d.action && (d.action==='STOP'||d.action.includes('SELL')));
+
+  const panel = document.getElementById('deBucketDetail');
+  const labelMap = { BUY:'Buy', HOLD:'Hold', STOP:'Sell / Stop' };
+  if(panel.dataset.open===bucket){ panel.style.display='none'; panel.dataset.open=''; return; }
+  panel.dataset.open = bucket;
+
+  if(!items.length){
+    panel.innerHTML = `<div class="dc-card"><div style="font-size:12px;color:var(--text3)">ไม่มีหุ้นในกลุ่ม ${labelMap[bucket]}</div></div>`;
+    panel.style.display='block';
+    return;
+  }
+  panel.innerHTML = `<div class="dc-card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">หุ้นในกลุ่ม ${labelMap[bucket]} (${items.length})</div>
+    ${items.map(d=>{
+      let zoneRange = '';
+      if(d.zone && d.zone!=='NO' && d.zones){
+        const key = d.zone.toLowerCase();
+        const range = d.zones[key];
+        if(range && range[0]!=null && range[1]!=null){
+          const lo = currentCurrency==='USD'?range[0]:range[0]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+          const hi = currentCurrency==='USD'?range[1]:range[1]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+          zoneRange = ` — โซน ${d.zone} (${fmt(Math.min(lo,hi))}–${fmt(Math.max(lo,hi))})`;
+        }
+      }
+      const priceCur = currentCurrency==='USD' ? d.price : d.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+      return `<div style="font-size:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)"><b>${d.ticker}</b> — ราคาปัจจุบัน ${fmt(priceCur)}${zoneRange}</div>`;
+    }).join('')}
+  </div>`;
+  panel.style.display='block';
+}
+
 function renderDecision(){
   if(!RAW_DATA) return;
   const heldTickers = new Set(getHeldTickers().map(h=>h.ticker));
@@ -2493,7 +2532,10 @@ function renderNewsResult(el, data){
     </div>`;
   }
   if(!e){
-    html += `<div style="font-size:12px;color:var(--text3);margin-bottom:8px">ไม่พบข้อมูลงบ/ปฏิทินประกาศผลสำหรับ ticker นี้จาก Yahoo Finance</div>`;
+    const dbg = data._debug && data._debug.earnings;
+    html += `<div style="font-size:12px;color:var(--text3);margin-bottom:8px">ไม่พบข้อมูลงบ/ปฏิทินประกาศผลสำหรับ ticker นี้จาก Yahoo Finance
+      ${dbg ? `<details style="margin-top:4px"><summary style="cursor:pointer;font-size:11px">รายละเอียด (debug)</summary><pre style="white-space:pre-wrap;font-size:10px;background:var(--surface2,#f5f5f5);padding:6px;border-radius:6px;margin-top:4px">${JSON.stringify(dbg,null,2).replace(/</g,'&lt;')}</pre></details>` : ''}
+    </div>`;
   }
 
   const news = data.news || [];
@@ -2504,7 +2546,10 @@ function renderNewsResult(el, data){
       <span style="color:var(--text3);font-size:11px"> — ${n.source||''} ${n.pubDate?'· '+new Date(n.pubDate).toLocaleDateString('th-TH'):''}</span>
     </div>`).join('');
   } else {
-    html += `<div style="font-size:12px;color:var(--text3)">ไม่พบข่าวล่าสุด</div>`;
+    const dbg = data._debug && data._debug.news;
+    html += `<div style="font-size:12px;color:var(--text3)">ไม่พบข่าวล่าสุด
+      ${dbg ? `<details style="margin-top:4px"><summary style="cursor:pointer;font-size:11px">รายละเอียด (debug)</summary><pre style="white-space:pre-wrap;font-size:10px;background:var(--surface2,#f5f5f5);padding:6px;border-radius:6px;margin-top:4px">${JSON.stringify(dbg,null,2).replace(/</g,'&lt;')}</pre></details>` : ''}
+    </div>`;
   }
   html += `<div style="font-size:10px;color:var(--text3);margin-top:8px">แหล่งข้อมูล: Yahoo Finance + Google News · ดึงเมื่อ ${data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('th-TH') : '—'}</div>`;
   html += `</div>`;
