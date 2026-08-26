@@ -1954,13 +1954,42 @@ function calcEntryExit(){
   `;
 }
 
+// Single source of truth for a ticker's decision: prefer live AI analysis
+// (decisionAiCache) once it's been run; fall back to the static Decision_Rules
+// sheet for tickers not yet analyzed. Always labeled so it's clear which one.
+function getEffectiveDecision(ticker){
+  const ai = decisionAiCache[ticker];
+  if(ai && ai.data){
+    const d = ai.data;
+    const action = d.action || '';
+    const bucket = action.includes('BUY') ? 'BUY' : action==='HOLD' ? 'HOLD' : (action ? 'STOP' : null);
+    let priceInfo = '';
+    if(bucket==='BUY' && d.buyMore && d.buyMore.priceZone) priceInfo = `โซน ${d.buyMore.priceZone}`;
+    else if(bucket==='STOP' && d.stopLoss && d.stopLoss.price) priceInfo = `stop ${d.stopLoss.price}`;
+    return { source:'ai', ticker, bucket, action, priceInfo, conviction:d.conviction };
+  }
+  const sheet = (RAW_DATA.decisions||[]).find(d=>d.ticker===ticker);
+  if(sheet){
+    const action = sheet.action || '';
+    const bucket = action.includes('BUY') ? 'BUY' : action==='HOLD' ? 'HOLD' : (action ? 'STOP' : null);
+    let priceInfo = '';
+    if(sheet.zone && sheet.zone!=='NO' && sheet.zones){
+      const key = sheet.zone.toLowerCase();
+      const range = sheet.zones[key];
+      if(range && range[0]!=null && range[1]!=null){
+        const lo = currentCurrency==='USD'?range[0]:range[0]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+        const hi = currentCurrency==='USD'?range[1]:range[1]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+        priceInfo = `โซน ${sheet.zone} (${fmt(Math.min(lo,hi))}–${fmt(Math.max(lo,hi))})`;
+      }
+    }
+    return { source:'sheet', ticker, bucket, action, priceInfo, price:sheet.price };
+  }
+  return { source:'none', ticker, bucket:null };
+}
+
 function showDecisionBucket(bucket){
-  const heldTickers = new Set(getHeldTickers().map(h=>h.ticker));
-  const heldDecisions = (RAW_DATA.decisions||[]).filter(d=>heldTickers.has(d.ticker));
-  let items;
-  if(bucket==='BUY') items = heldDecisions.filter(d=>d.action && d.action.includes('BUY'));
-  else if(bucket==='HOLD') items = heldDecisions.filter(d=>d.action==='HOLD');
-  else items = heldDecisions.filter(d=>d.action && (d.action==='STOP'||d.action.includes('SELL')));
+  const held = getHeldTickers();
+  const items = held.map(h=>getEffectiveDecision(h.ticker)).filter(e=>e.bucket===bucket);
 
   const panel = document.getElementById('deBucketDetail');
   const labelMap = { BUY:'Buy', HOLD:'Hold', STOP:'Sell / Stop' };
@@ -1974,35 +2003,39 @@ function showDecisionBucket(bucket){
   }
   panel.innerHTML = `<div class="dc-card">
     <div style="font-size:13px;font-weight:600;margin-bottom:10px">หุ้นในกลุ่ม ${labelMap[bucket]} (${items.length})</div>
-    ${items.map(d=>{
-      let zoneRange = '';
-      if(d.zone && d.zone!=='NO' && d.zones){
-        const key = d.zone.toLowerCase();
-        const range = d.zones[key];
-        if(range && range[0]!=null && range[1]!=null){
-          const lo = currentCurrency==='USD'?range[0]:range[0]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-          const hi = currentCurrency==='USD'?range[1]:range[1]*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-          zoneRange = ` — โซน ${d.zone} (${fmt(Math.min(lo,hi))}–${fmt(Math.max(lo,hi))})`;
-        }
+    ${items.map(it=>{
+      const sourceTag = it.source==='ai'
+        ? `<span class="badge badge-good" style="font-size:10px">🧠 AI</span>`
+        : `<span class="badge badge-weak" style="font-size:10px">ชีท (ยังไม่วิเคราะห์ AI)</span>`;
+      let detailLine = '';
+      if(it.source==='ai'){
+        detailLine = `conviction ${it.conviction??'—'}${it.priceInfo?' — '+it.priceInfo:''}`;
+      } else {
+        const priceCur = currentCurrency==='USD' ? it.price : it.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
+        detailLine = `ราคาปัจจุบัน ${fmt(priceCur)}${it.priceInfo?' — '+it.priceInfo:''}`;
       }
-      const priceCur = currentCurrency==='USD' ? d.price : d.price*(RAW_DATA.dashboard.fxRateUSDTHB||1);
-      return `<div style="font-size:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)"><b>${d.ticker}</b> — ราคาปัจจุบัน ${fmt(priceCur)}${zoneRange}</div>`;
+      return `<div style="font-size:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+        <b>${it.ticker}</b> ${sourceTag}<br>${detailLine}
+      </div>`;
     }).join('')}
   </div>`;
   panel.style.display='block';
 }
 
+function updateDecisionKpis(){
+  if(!RAW_DATA) return;
+  const held = getHeldTickers();
+  const effective = held.map(h=>getEffectiveDecision(h.ticker)).filter(e=>e.bucket);
+  document.getElementById('de-buy').textContent = effective.filter(e=>e.bucket==='BUY').length;
+  document.getElementById('de-hold').textContent = effective.filter(e=>e.bucket==='HOLD').length;
+  document.getElementById('de-stop').textContent = effective.filter(e=>e.bucket==='STOP').length;
+  const panel = document.getElementById('deBucketDetail');
+  if(panel && panel.dataset.open){ const b = panel.dataset.open; panel.dataset.open=''; showDecisionBucket(b); }
+}
+
 function renderDecision(){
   if(!RAW_DATA) return;
-  const heldTickers = new Set(getHeldTickers().map(h=>h.ticker));
-  const heldDecisions = (RAW_DATA.decisions||[]).filter(d=>heldTickers.has(d.ticker));
-  const buys = heldDecisions.filter(d=>d.action && d.action.includes('BUY')).length;
-  const holds = heldDecisions.filter(d=>d.action==='HOLD').length;
-  const stops = heldDecisions.filter(d=>d.action && (d.action==='STOP'||d.action.includes('SELL'))).length;
-  document.getElementById('de-buy').textContent = buys;
-  document.getElementById('de-hold').textContent = holds;
-  document.getElementById('de-stop').textContent = stops;
-
+  updateDecisionKpis();
   renderHeldCards();
   if(typeof newsTab!=='undefined'){ if(newsTab==='held') renderNewsHeldCards(); else renderNewsWatchCards(); }
 }
@@ -2315,6 +2348,7 @@ async function runDecisionAI(ticker, isHeld){
   try{
     const data = await fetchDecisionData(ticker, isHeld);
     renderDecisionResult(resultEl, data, isHeld);
+    if(isHeld) updateDecisionKpis();
   }catch(err){
     resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0">วิเคราะห์ไม่สำเร็จ: ${err.message}</div>`;
   }
@@ -2340,6 +2374,7 @@ async function runDecisionAIBatch(){
       results.push({ ticker, data, ok:true });
       const resultEl = document.getElementById(`deResult-${ticker}`);
       if(resultEl) renderDecisionResult(resultEl, data, true);
+      updateDecisionKpis();
     }catch(err){
       results.push({ ticker, error: err.message, ok:false });
     }
