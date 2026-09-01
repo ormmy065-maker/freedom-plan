@@ -846,7 +846,8 @@ function renderTracker(){
     const pnl = val(h,'unrealizedUSD','unrealizedTHB');
     const cls = pnl>=0?'pos':'neg';
     const badge = PORTFOLIO_BADGE[h.portfolio] || 'badge-legacy';
-    const priceDisplay = h.price>0 ? fmt(currentCurrency==='USD'?h.price:h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1)) : '<span class="neutral">— ยังไม่ตั้งราคา</span>';
+    const liveTag = h.priceSource==='yahoo_live' ? ' <span title="ราคาสดจาก Yahoo Finance (ยังไม่มีในชีต Price)" style="font-size:10px;color:var(--text3)">🔴live</span>' : '';
+    const priceDisplay = h.price>0 ? fmt(currentCurrency==='USD'?h.price:h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1))+liveTag : '<span class="neutral">— ไม่พบราคา (ตรวจสอบ ticker)</span>';
     return `<tr>
       <td><span style="font-weight:500">${h.ticker}</span></td>
       <td><span class="badge ${badge}">${h.portfolio}</span></td>
