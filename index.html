@@ -217,7 +217,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
     <button class="nav-item" onclick="navigate('tools')" id="nav-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tools Lab</button>
   </nav>
   <div class="sidebar-bottom">
-    <div class="status-row"><div class="status-dot" id="connDot"></div><span id="connText">กำลังเชื่อมต่อ...</span></div>
+    <div class="status-row" onclick="openSetupBox()" style="cursor:pointer" title="คลิกเพื่อตั้งค่า/แก้ไข Apps Script URL"><div class="status-dot" id="connDot"></div><span id="connText">กำลังเชื่อมต่อ...</span></div>
   </div>
 </aside>
 
@@ -235,10 +235,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text1);font-size:1
 
   <div class="content">
     <div id="setupBox" class="setup-box" style="display:none">
-      <div style="font-size:14px;font-weight:500;margin-bottom:6px">ยังไม่ได้ตั้งค่า Apps Script URL</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">วาง URL ที่ลงท้ายด้วย /exec จาก Google Apps Script deployment</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:6px">ตั้งค่า / แก้ไข Apps Script URL</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">วาง URL ที่ลงท้ายด้วย /exec จาก Google Apps Script deployment — คลิกที่จุดสถานะการเชื่อมต่อ (มุมล่างซ้าย) เพื่อเปิดกล่องนี้ได้ทุกเมื่อ</div>
       <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/.../exec">
       <br><button onclick="saveUrl()">บันทึกและโหลดข้อมูล</button>
+      <button onclick="document.getElementById('setupBox').style.display='none'" style="margin-left:8px;background:transparent;color:var(--text3);border:1px solid var(--border)">ยกเลิก</button>
     </div>
 
     <div id="errorBanner" class="banner banner-error" style="display:none"></div>
@@ -732,6 +733,12 @@ function saveUrl(){
   document.getElementById('setupBox').style.display = 'none';
   loadData();
 }
+function openSetupBox(){
+  const box = document.getElementById('setupBox');
+  const willShow = box.style.display === 'none';
+  box.style.display = willShow ? 'block' : 'none';
+  if(willShow) document.getElementById('urlInput').value = getUrl();
+}
 
 function setCurrency(cur){
   currentCurrency = cur;
@@ -790,7 +797,7 @@ async function loadData(){
     document.getElementById('connText').textContent = 'เชื่อมต่อไม่สำเร็จ';
     document.getElementById('connDot').className = 'status-dot error';
     document.getElementById('errorBanner').style.display = 'flex';
-    document.getElementById('errorBanner').textContent = '⚠ โหลดข้อมูลสดไม่สำเร็จ: ' + err.message;
+    document.getElementById('errorBanner').innerHTML = '⚠ โหลดข้อมูลสดไม่สำเร็จ: ' + err.message + ' — <a href="#" onclick="openSetupBox();return false;" style="text-decoration:underline;font-weight:600">ตรวจสอบ/แก้ไข URL</a>';
     if(cached){
       const parsed = JSON.parse(cached);
       RAW_DATA = parsed.data;
