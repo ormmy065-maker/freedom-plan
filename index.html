@@ -849,8 +849,33 @@ function renderTracker(){
     const liveTag = h.priceSource==='yahoo_live' ? ' <span title="ราคาสดจาก Yahoo Finance (ยังไม่มีในชีต Price)" style="font-size:10px;color:var(--text3)">🔴live</span>' : '';
     const priceDebugAttr = h.priceDebug ? ` title="Debug: ${JSON.stringify(h.priceDebug).replace(/"/g,'&quot;')}"` : '';
     const priceDisplay = h.price>0 ? fmt(currentCurrency==='USD'?h.price:h.price*(RAW_DATA.dashboard.fxRateUSDTHB||1))+liveTag : `<span class="neutral"${priceDebugAttr} style="cursor:help;border-bottom:1px dotted currentColor">— ไม่พบราคา (hover ดู debug)</span>`;
+    const breakdown = h.byGoldSubType || h.byExchange;
+    const tickerCell = breakdown
+      ? `<span style="font-weight:500;cursor:pointer;border-bottom:1px dotted currentColor" onclick="toggleBreakdown('${h.ticker}')" title="คลิกดูรายละเอียดแยกย่อย">${h.ticker} ▾</span>`
+      : `<span style="font-weight:500">${h.ticker}</span>`;
+    const breakdownRow = breakdown ? `<tr id="breakdown-${h.ticker}" style="display:none;background:var(--surface2,#f7f5fb)">
+      <td colspan="9" style="padding:10px 16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+          ${Object.entries(breakdown).map(([label,d])=>{
+            const qty = d.grams!=null ? fmtNum(d.grams)+' g' : d.units!=null ? fmtNum(d.units)+' BTC' : d.shares!=null ? fmtNum(d.shares)+' shares' : '—';
+            const val_ = currentCurrency==='USD' ? d.valueUSD : d.valueTHB;
+            const cost_ = currentCurrency==='USD' ? d.costUSD : d.costTHB;
+            const pnlSub = d.unrealizedUSD;
+            const pnlCls = (pnlSub||0)>=0 ? 'pos':'neg';
+            return `<div style="font-size:12px">
+              <div style="font-weight:600;margin-bottom:4px">${label}</div>
+              <div style="color:var(--text3)">จำนวน: ${qty}</div>
+              <div style="color:var(--text3)">ต้นทุน: ${fmt(cost_)}</div>
+              <div>มูลค่า: ${fmt(val_)}</div>
+              ${pnlSub!=null ? `<div class="${pnlCls}">P&amp;L: ${pnlSub>=0?'+':''}${fmt(pnlSub)}${d.unrealizedPct!=null?' ('+(pnlSub>=0?'+':'')+d.unrealizedPct.toFixed(1)+'%)':''}</div>` : ''}
+              ${d.note ? `<div style="color:var(--amber);font-size:11px;margin-top:2px">${d.note}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </td>
+    </tr>` : '';
     return `<tr>
-      <td><span style="font-weight:500">${h.ticker}</span></td>
+      <td>${tickerCell}</td>
       <td><span class="badge ${badge}">${h.portfolio}</span></td>
       <td><span style="font-size:11px;color:var(--text3)">${h.sector||'—'}</span></td>
       <td><span class="mono">${fmtNum(h.units)}</span></td>
@@ -859,8 +884,13 @@ function renderTracker(){
       <td><span class="mono">${fmt(val(h,'marketValueUSD','marketValueTHB'))}</span></td>
       <td class="${cls}"><span class="mono">${pnl>=0?'+':''}${fmt(pnl)}</span></td>
       <td class="${cls}">${h.unrealizedPct!==null && h.unrealizedPct!==undefined ? (pnl>=0?'+':'')+h.unrealizedPct.toFixed(1)+'%' : '—'}</td>
-    </tr>`;
+    </tr>${breakdownRow}`;
   }).join('');
+}
+
+function toggleBreakdown(ticker){
+  const row = document.getElementById(`breakdown-${ticker}`);
+  if(row) row.style.display = row.style.display==='none' ? 'table-row' : 'none';
 }
 
 function setFilter(f){ currentFilter = f; renderTracker(); }
